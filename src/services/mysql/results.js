@@ -13,15 +13,18 @@ const results = deps => {
         })
       })
     },
-    save: (name) => {
+    save: (endpoint_id) => {
       return new Promise((resolve, reject) => {
         const { connection, errorHandler } = deps
-        connection.query('INSERT INTO results(name) VALUES(?)', [name], (error, results) => {
+        const date = new Date()
+
+        connection.query('INSERT INTO results(`last_check`, `http_status`, `payload`, `endpoint_id`) ' +
+          'VALUES(?,?,?,?)', [date, response.statusCode, response.statusCode, endpoint_id], (error, results) => {
           if(error) {
             errorHandler(error, `Nepodařilo se uložit výsledek ${name}`, reject)
             return false
           }
-          resolve ({ result: { name, id: results.insertId } })
+          resolve ({ result: { endpoint_id, id: results.insertId } })
         })
       })
     },

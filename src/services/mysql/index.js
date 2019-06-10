@@ -14,12 +14,15 @@ const errorHandler = (error, message, rejectFunction) => {
 }
 
 const resultModule = require('./results')({ connection, errorHandler });
+const endpointModule = require('./endpoints')({ connection, errorHandler });
+
 const usersModule = require('./users')({ connection, errorHandler });
 const authModule = require('./auth')({ connection, errorHandler });
 
 
 module.exports = {
   results: () => resultModule,
+  endpoints: () => endpointModule,
   users: () => usersModule,
   auth: () => authModule,
 }

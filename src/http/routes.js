@@ -23,16 +23,6 @@ const routes = (server) => {
     }
     next()
   })
-
-  server.get('/checkEndpoints', (req, res, next) => {
-    request('http://www.google.com', function (error, response, body) {
-      if (!error && response.statusCode == 200) {
-        res.send(body)
-      }
-    })
-    next()
-  })
-
   server.get('/user', async (req, res, next) => {
 
     try {
@@ -96,6 +86,67 @@ const routes = (server) => {
     const { id } = req.params
     try {
       res.send(await db.results().delete(id))
+    }
+    catch (error) {
+      res.send(error)
+    }
+    next()
+
+  })
+
+  server.get('/checkEndpoints', async (req, res, next) => {
+    try {
+      const endpoints = await db.endpoints().all();
+      console.log(endpoints);
+      Object.keys(endpoints).forEach(function (k) {
+        console.log(endpoints[k]);
+        // request(e.url, function (error, response, body) {
+        //   console.log(response)
+        //   if (!error && response.statusCode === 200) {
+        //     db.results().save(e.url, response)
+        //     res.send(body)
+        //   }
+        // })
+      });
+    }
+    catch (error) {
+      res.send(error)
+    }
+    next()
+  })
+
+  server.get('/endpoint', async (req, res, next) => {
+
+    try {
+      const user = req.decoded
+      const endpoints = await db.endpoints().all(user)
+      res.send({ endpoints })
+    }
+
+    catch (error) {
+      res.send(error)
+    }
+    next()
+  })
+
+  server.put('/endpoint', async (req, res, next) => {
+    const { id, name, url, interval } = req.params
+    try {
+      res.send(await db.endpoints().update(id, name, url, interval))
+    }
+    catch (error) {
+      res.send(error)
+    }
+    next()
+
+  })
+
+  server.post('/endpoint', async (req, res, next) => {
+    const { name, url, interval } = req.params
+    const user = req.decoded
+
+    try {
+      res.send(await db.endpoints().save(name, url, interval, user))
     }
     catch (error) {
       res.send(error)
