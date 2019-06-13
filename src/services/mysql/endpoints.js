@@ -10,7 +10,7 @@ const endpoints = deps => {
             errorHandler(error, 'Nepodařilo se zobrazit list of endpoints', reject)
             return false
           }
-          // resolve ({ pagination: { page: 2, endpoints: endpoints.length}, endpoints: endpoints })
+          // resolve promise
           resolve(endpoints)
         })
       })
@@ -23,7 +23,7 @@ const endpoints = deps => {
             errorHandler(error, 'Nepodařilo se zobrazit list of endpoints', reject)
             return false
           }
-          // resolve ({ pagination: { page: 2, endpoints: endpoints.length}, endpoints: endpoints })
+          // resolve promise
           resolve(endpoints)
         })
       })
@@ -38,20 +38,31 @@ const endpoints = deps => {
             errorHandler(error, `Nepodařilo se uložit endpoint ${name}`, reject)
             return false
           }
+          // resolve promise
           resolve({ endpoint: { name, url, id: endpoints.insertId } })
         })
       })
     },
-
-    update: (id, name, url, interval) => { // TODO: ako spravim niektore paramatre nepovinne?
+    update: (endpoint) => {
       return new Promise((resolve, reject) => {
         const { connection, errorHandler } = deps
-        connection.query('UPDATE endpoints SET name = ?, url = ?, interval = ? WHERE id = ?', [name, url, interval, id], (error, endpoints) => {
+        const { id } = endpoint
+        const keys = []
+        const values = []
+        const array = [ 'name', 'url', 'interval' ]
+        array.forEach((key) => { // filter only allowed values
+          if (endpoint.hasOwnProperty(key) && endpoint[key] !== undefined) { // prepare only keys which are updating
+            keys.push(`${key} = ?`)
+            values.push(endpoint[key])
+          }
+        })
+        connection.query(`UPDATE endpoints SET ${keys.join(', ')} WHERE id = ?`, values.concat(id), (error, endpoints) => {
           if (error || !endpoints.affectedRows) {
-            errorHandler(error, `Nepodařilo se změnit endpoint ${name}`, reject)
+            errorHandler(error, `Nepodařilo se změnit endpoint ${id}`, reject)
             return false
           }
-          resolve({ result: { name, url, interval, id }, affectedRows: endpoints.affectedRows })
+          // resolve promise
+          resolve({ endpoint: endpoints, affectedRows: endpoints.affectedRows })
         })
       })
     },
@@ -63,28 +74,13 @@ const endpoints = deps => {
             errorHandler(error, `Nepodařilo se smazat endpoint s id ${id}`, reject)
             return false
           }
+          // resolve promise
           resolve({ message: 'Endpoint i výsledky úspěšně odstraněny.', endpointId: id, affectedRows: endpoints.affectedRows })
-        })
-      })
-    },
-    async checkEndpoints (db) {
-      const endpoints = await this.allWithoutUser()
-      const promises = endpoints.map((endpoint, index) => {
-        return new Promise((resolve, reject) => {
-          // ak nie je response tak lognut - prehodit do services
-          request(endpoint.url, function (error, response, body) {
-            if (error) {
-              reject(error)
-            }
-
-            db.results().save(endpoint, response)
-
-            resolve('ok')
-          })
         })
       })
     }
   }
 }
 
+// export endpoints
 module.exports = endpoints

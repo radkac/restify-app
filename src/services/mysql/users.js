@@ -10,7 +10,7 @@ const users = deps => {
             errorHandler(error, 'Nepodařilo se zobrazit seznam uživatelů', reject)
             return false
           }
-          // resolve ({ pagination: { page: 2, results: results.length}, users: results })
+          // resolve promise
           resolve({ users: results })
         })
       })
@@ -23,19 +23,31 @@ const users = deps => {
             errorHandler(error, `Nepodařilo se uložit uživatele ${email}`, reject)
             return false
           }
+          // resolve promise
           resolve({ user: { email, username, id: results.insertId } })
         })
       })
     },
-    update: (id, username, email) => {
+    update: (user) => {
       return new Promise((resolve, reject) => {
         const { connection, errorHandler } = deps
-        connection.query('UPDATE users SET email = ?, username = ? WHERE id = ?', [email, username, id], (error, results) => {
-          if (error || !results.affectedRows) {
-            errorHandler(error, `Nepodařilo se změnit uživatele s id ${id}`, reject)
+        const { id } = user
+        const keys = []
+        const values = []
+        const array = [ 'username', 'email' ]
+        array.forEach((key) => { // filter only allowed values
+          if (user.hasOwnProperty(key) && user[key] !== undefined) { // prepare only keys which are updating
+            keys.push(`${key} = ?`)
+            values.push(user[key])
+          }
+        })
+        connection.query(`UPDATE users SET ${keys.join(', ')} WHERE id = ?`, values.concat(id), (error, users) => {
+          if (error || !users.affectedRows) {
+            errorHandler(error, `Nepodařilo se změnit endpoint ${id}`, reject)
             return false
           }
-          resolve({ user: { id }, affectedRows: results.affectedRows })
+          // resolve promise
+          resolve({ user: users, affectedRows: users.affectedRows })
         })
       })
     },
@@ -47,6 +59,7 @@ const users = deps => {
             errorHandler(error, `Nepodařilo se smazat uživatele s id ${id}`, reject)
             return false
           }
+          // resolve promise
           resolve({ message: 'Uživatel úspěšně odstraněn.', affectedRows: results.affectedRows })
         })
       })
@@ -54,4 +67,5 @@ const users = deps => {
   }
 }
 
+// export users
 module.exports = users
