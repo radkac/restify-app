@@ -1,11 +1,8 @@
 const db = require('../services/mysql')
-const request = require('request');
-
-
-// db.results().all()
-// db.results.save(name)
-// db.results.update(id, name)
-// db.results.delete(id)
+const Joi = require('@hapi/joi')
+const userSchema = require('../services/mysql/schemas/user')
+const resultSchema = require('../services/mysql/schemas/result')
+const endpointSchema = require('../services/mysql/schemas/endpoint')
 
 const routes = (server) => {
   server.get('/', (req, res, next) => {
@@ -13,167 +10,210 @@ const routes = (server) => {
     next()
   })
 
+  /**
+   * @param email (String)
+   * @param accessToken (String)
+   * @return authenticationToken (x-access-token)
+   */
   server.post('/authenticate', async (req, res, next) => {
     try {
-      const { email, access_token } = req.params
-      res.send(await db.auth().authenticate(email, access_token))
+      const { email, accessToken } = req.params
+      const { error, value } = Joi.validate({ email: email, password: accessToken }, userSchema)
+      if (error) {
+        res.send(400, error)
+        return
+      }
+      res.send(await db.auth().authenticate(email, accessToken))
     } catch (error) {
-      res.send(error)
+      res.send(400, error)
     }
-    next()
   })
+  /**
+   * @return all users
+   */
   server.get('/user', async (req, res, next) => {
-
     try {
       const results = await db.users().all()
-      // const user = req.decoded
       res.send({ results })
     } catch (error) {
-      res.send(error)
+      res.send(400, error)
     }
-    next()
   })
 
+  /**
+   * @param email (String)
+   * @param name (String)
+   * @param password (String)
+   *
+   * @return new row in db.users
+   */
   server.post('/user', async (req, res, next) => {
     try {
       const { email, name, password } = req.params
+      const { error, value } = Joi.validate({ user: { email: email, username: name, access_token: password } }, schema)
+      if (error) {
+        res.send(400, error)
+        return
+      }
       res.send(await db.users().save(email, name, password))
     } catch (error) {
-      res.send(error)
+      res.send(400, error)
     }
     next()
   })
 
-  server.put('/user', async (req, res, next) => {
+  /**
+   * @param id (Number - required)
+   * @param name (String - optional)
+   * @param email (String - optional)
+   *
+   * @return update specific user in db.users
+   */
+  server.put('/user', async (req, res, next) => { // TODO: edit only herself
     const { id, name, email } = req.params
     try {
-      res.send(await db.users().update(id, name, email))
+      const { error, value } = Joi.validate({ user: { id, name, email } }, schema)
+      if (error) {
+        res.send(400, error)
+        return
+      }
+      res.send(await db.users().update({ id, name, email }))
     } catch (error) {
-      res.send(error)
+      res.send(400, error)
     }
-    next()
   })
 
+  /**
+   * @return get all results for authorized user
+   */
   server.get('/result', async (req, res, next) => {
     try {
       const results = await db.results().all()
       const user = req.decoded
       res.send({ results, user })
     } catch (error) {
-      res.send(error)
+      res.send(400, error)
     }
-    next()
-
-    // results.then(results => console.log(results)).catch(error(error))
-    // db.results().all().then(results => {
-    //   res.send(results)
-    //
-    // }).catch(error => {
-    //   res.send(error)
-    //
-    // })
   })
 
+  /**
+   * @param name (String)
+   *
+   * @return new row in db.results
+   */
   server.post('/result', async (req, res, next) => {
     const { name } = req.params
     try {
+      const { error, value } = Joi.validate({ result: { name: name } }, schema)
+      if (error) {
+        res.send(400, error)
+        return
+      }
       res.send(await db.results().save(name))
     } catch (error) {
-      res.send(error)
+      res.send(400, error)
     }
-    next()
   })
 
-  server.put('/result', async (req, res, next) => {
-    const { id, name } = req.params
-    try {
-      res.send(await db.results().update(id, name))
-    } catch (error) {
-      res.send(error)
-    }
-    next()
-  })
-
+  /**
+   * @param id (Number - id of Result)
+   *
+   * @return delete row from db.results
+   */
   server.del('/result', async (req, res, next) => {
     const { id } = req.params
     try {
+      const { error, value } = Joi.validate({ result: { id: id } }, schema)
+      if (error) {
+        res.send(400, error)
+        return
+      }
       res.send(await db.results().delete(id))
     } catch (error) {
-      res.send(error)
+      res.send(400, error)
     }
-    next()
   })
 
-  server.get('/checkEndpoints', async (req, res, next) => {
-    try {
-      const user = req.decoded
-      const endpoints = await db.endpoints().all(user)
-      const promises = endpoints.map((endpoint, index) => {
-        return new Promise((resolve, reject) => {
-          request(endpoint.url, function (error, response, body) {
-            if (error) {
-              reject(error)
-            }
-
-            db.results().save(endpoint, response)
-
-            resolve('ok')
-            // }
-          })
-        })
-      })
-      await Promise.all(promises)
-      res.send('ok')
-    } catch (error) {
-      res.send(error)
-    }
-    // next()
-  })
-
+  /**
+   * @return all endpoints for specific user
+   */
   server.get('/endpoint', async (req, res, next) => {
-
     try {
       const user = req.decoded
+      const { error, value } = Joi.validate({ user: user }, schema)
+      if (error) {
+        res.send(400, error)
+        return
+      }
       const endpoints = await db.endpoints().all(user)
       res.send({ endpoints })
     } catch (error) {
-      res.send(error)
+      res.send(400, error)
     }
-    next()
   })
 
+  /**
+   * @param id (Number)
+   * @param name (String)
+   * @param url (String)
+   * @param interval (Number)
+   *
+   * @return updated row in db.endpoints
+   */
   server.put('/endpoint', async (req, res, next) => {
     const { id, name, url, interval } = req.params
     try {
-      res.send(await db.endpoints().update(id, name, url, interval))
+      const { error, value } = Joi.validate({ endpoint: { id, name, url, interval } }, schema)
+      if (error) {
+        res.send(400, error)
+        return
+      }
+      res.send(await db.endpoints().update({ id, name, url, interval }))
+    } catch (error) {
+      res.send(400, error)
     }
-    catch (error) {
-      res.send(error)
-    }
-    next()
   })
 
+  /**
+   * @param name
+   * @param url
+   * @param interval
+   *
+   * @return new row in db.endpoints
+   */
   server.post('/endpoint', async (req, res, next) => {
     const { name, url, interval } = req.params
     const user = req.decoded
-
     try {
+      const { error, value } = Joi.validate({ endpoint: { name: name, url: url, interval: interval }, user: user }, schema)
+      if (error) {
+        res.send(400, error)
+        return
+      }
       res.send(await db.endpoints().save(name, url, interval, user))
     } catch (error) {
-      res.send(error)
+      res.send(400, error)
     }
-    next()
   })
 
+  /**
+   * @param id
+   *
+   * @return delete all results for specific endpoint and delete specific endpoint
+   */
   server.del('/endpoint', async (req, res, next) => {
     const { id } = req.params
     try {
-      res.send(await db.results().deleteByEndpoint(id)) // TODO: je to dobre?
+      const { error, value } = Joi.validate({ endpoint: { id: id } }, schema)
+      if (error) {
+        res.send(400, error)
+        return
+      }
+      res.send(await db.results().deleteByEndpoint(id))
       res.send(await db.endpoints().delete(id))
     } catch (error) {
-      res.send(error)
+      res.send(400, error)
     }
-    next()
   })
 }
 
