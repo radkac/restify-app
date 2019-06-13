@@ -1,18 +1,13 @@
 const { connection, errorHandler } = require('./setup')
-const results = require('../results')({ connection, errorHandler })
-
-const create = () => results.save({ 'id': '1' }, { 'statusCode': '200' })
-
-// beforeEach(t => connection.query('TRUNCATE TABLE results'))
-
-test('All', done => {
-  expect(results.all).toBeDefined()
-  done()
-})
 
 test('Create result', async done => {
-  const insert = await create()
+  const fakeConnection = { query: jest.fn().mockImplementation((query, params, callback) => {
+    callback(null, { user: { name: 'Testovaci endpoint', url: 'http://www.google.com', interval: 1000, user: { 'id': '1' } } })
+  }) }
+  const fakeResults = require('../results')({ connection: fakeConnection, errorHandler })
+
+  const insert = await fakeResults.save({ 'id': '1' }, { 'statusCode': '200' })
+
   expect(insert.result.endpointId).toBe('1')
   done()
 })
-

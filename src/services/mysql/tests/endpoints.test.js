@@ -1,33 +1,44 @@
 const { connection, errorHandler } = require('./setup')
-const endpoints = require('../endpoints')({ connection, errorHandler })
-const results = require('../results')({ connection, errorHandler })
-
-const create = () => endpoints.save('Testovaci endpoint', 'http://www.google.com', '1000', { 'id': '1' })
 
 // beforeEach(t => connection.query('TRUNCATE TABLE endpoints'))
-// TODO: ako nastavim poradie testov?
 
-test('All', done => {
-  expect(endpoints.all).toBeDefined()
-  done()
-})
 test('Create endpoint', async done => {
-  const insert = await create()
+  const fakeConnection = { query: jest.fn().mockImplementation((query, params, callback) => {
+    callback(null, { endpoint: { name: 'Testovaci endpoint', url: 'http://www.google.com', interval: 1000, user: { 'id': '1' } } })
+  }) }
+  const fakeEndpoints = require('../endpoints')({ connection: fakeConnection, errorHandler })
+
+  const insert = await fakeEndpoints.save('Testovaci endpoint', 'http://www.google.com', '1000', { 'id': '1' })
+
   expect(insert.endpoint.name).toBe('Testovaci endpoint')
   done()
 })
 
 test('Update endpoint', async done => {
-  await create()
-  const updated = await endpoints.update(1, 'Zmeneny endpoint')
-  expect(updated.endpoint.name).toBe('Testovaci endpoint')
+  const fakeConnection = { query: jest.fn().mockImplementation((query, params, callback) => {
+    callback(null, { endpoint: { id: 1, name: 'Zmeneny endpoint' }, affectedRows: 1 })
+  }) }
+  const fakeEndpoints = require('../endpoints')({ connection: fakeConnection, errorHandler })
+  const updated = await fakeEndpoints.update(1, 'Zmeneny endpoint')
+  expect(updated.endpoint.endpoint.name).toBe('Zmeneny endpoint')
   expect(updated.affectedRows).toBe(1)
   done()
 })
 
-// test('Delete endpoint', async () => {
-//   const resultResult = await results.deleteByEndpoint('1')
-//   const endpointResult = await endpoints.delete('1')
-//   expect(resultResult.affectedRows).not.toBe(0)
-//   expect(endpointResult.affectedRows).toBe(1)
-// })
+test('Delete endpoint', async () => {
+  const fakeConnection = { query: jest.fn().mockImplementation((query, params, callback) => {
+    callback(null, { endpoint: { id: 1, name: 'Zmeneny endpoint' }, affectedRows: 1 })
+  }) }
+  const fakeConnection1 = { query: jest.fn().mockImplementation((query, params, callback) => {
+    callback(null, { endpoint: { id: 1 }, affectedRows: 1 })
+  }) }
+
+  const fakeEndpoints = require('../endpoints')({ connection: fakeConnection, errorHandler })
+  const fakeResults = require('../results')({ connection: fakeConnection1, errorHandler })
+
+  const resultResult = await fakeResults.deleteByEndpoint(1)
+  const endpointResult = await fakeEndpoints.delete(1)
+
+  expect(resultResult.affectedRows).not.toBe(0)
+  expect(endpointResult.affectedRows).toBe(1)
+})
