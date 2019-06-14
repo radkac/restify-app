@@ -14,6 +14,8 @@ class EndpointChecker {
           reject(error)
           return
         }
+        const date = new Date()
+        this.db.endpoints().update({ id: this.endpoint.id, last_check: date })
         this.db.results().save(this.endpoint, response)
         resolve('ok')
       })

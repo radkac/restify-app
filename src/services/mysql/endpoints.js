@@ -61,7 +61,7 @@ const endpoints = deps => {
         const { id } = endpoint
         const keys = []
         const values = []
-        const array = [ 'name', 'url', 'changeInterval' ]
+        const array = [ 'name', 'url', 'last_check', 'changeInterval' ]
         array.forEach((key) => { // filter only allowed values
           if (endpoint.hasOwnProperty(key) && endpoint[key] !== undefined) { // prepare only keys which are updating
             keys.push(`${key} = ?`)
