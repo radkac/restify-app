@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "keywords": [],
   "author": "",
@@ -23,9 +23,13 @@
     "sha1": "^1.1.1"
   },
   "dependencies": {
+    "@hapi/joi": "^15.0.3",
     "dotenv": "^8.0.0",
+    "jest": "^24.8.0",
     "nodemon": "^1.19.0",
     "request": "^2.88.0",
-    "restify-cors-middleware": "^1.1.1"
+    "restify-cors-middleware": "^1.1.1",
+    "restify-errors": "^8.0.0",
+    "restify-joi-validator": "^1.0.2"
   }
 }
