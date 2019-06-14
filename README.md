@@ -5,7 +5,7 @@
 Application is written in [Node.js](https://nodejs.org/en/) and framework [Restify](http://restify.com) (middleware for building REST APIs). It contains service for monitoring URLs on background and log status codes with payload. 
 
 ## Prerequisites
-Make sure you have **Node 8.x**, **NPM** and **Postman** installed.
+Make sure you have **Node 8.x**, **NPM** and [Postman](https://www.getpostman.com) installed.
 
 ## Quick start
 1. Clone the project from this repository
@@ -14,7 +14,14 @@ Make sure you have **Node 8.x**, **NPM** and **Postman** installed.
 4. In the project root, rename file called `env-example.json` to `env-local.json`
 5. In this file rewrite database credentials and other parameters with your own
 6. Run application from console with `npm run dev`
-7. Open http://localhost:3456
+7. Open http://localhost:{your-port}
+
+## Tests
+Tests are powered by [Jest](https://jestjs.io)
+You can run the tests by using `npm test`.
+
+## Validation
+To object schema validation is using library [Joi](https://github.com/hapijs/joi),  for every object there is schema, located in `services/mysql/schemas`.
 
 ## API 
 - /authenticate - (POST) - give access token
