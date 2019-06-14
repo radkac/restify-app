@@ -2,6 +2,9 @@ const request = require('request')
 
 const endpoints = deps => {
   return {
+    /**
+     * Function for get all Endpoints by given user
+     */
     all: (user) => {
       return new Promise((resolve, reject) => {
         const { connection, errorHandler } = deps
@@ -15,6 +18,9 @@ const endpoints = deps => {
         })
       })
     },
+    /**
+     * Function for get all Endpoints
+     */
     allWithoutUser: () => {
       return new Promise((resolve, reject) => {
         const { connection, errorHandler } = deps
@@ -28,6 +34,9 @@ const endpoints = deps => {
         })
       })
     },
+    /**
+     * Function for save new row to db with params
+     */
     save: (name, url, interval, user) => {
       return new Promise((resolve, reject) => {
         const { connection, errorHandler } = deps
@@ -43,13 +52,16 @@ const endpoints = deps => {
         })
       })
     },
+    /**
+     * Function for update specific endpoint by given params
+     */
     update: (endpoint) => {
       return new Promise((resolve, reject) => {
         const { connection, errorHandler } = deps
         const { id } = endpoint
         const keys = []
         const values = []
-        const array = [ 'name', 'url', 'interval' ]
+        const array = [ 'name', 'url', 'changeInterval' ]
         array.forEach((key) => { // filter only allowed values
           if (endpoint.hasOwnProperty(key) && endpoint[key] !== undefined) { // prepare only keys which are updating
             keys.push(`${key} = ?`)
@@ -66,6 +78,9 @@ const endpoints = deps => {
         })
       })
     },
+    /**
+     * Function for delete specific Endpoint by given id
+     */
     delete: (id) => {
       return new Promise((resolve, reject) => {
         const { connection, errorHandler } = deps

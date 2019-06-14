@@ -5,13 +5,17 @@ const check = require('./services/endpoints/check')
 const server = require('./server')
 
 async function checker () {
-  const endpoints = await db.endpoints().allWithoutUser()
-  const checkMonitors = endpoints.map((endpoint, index) => {
-    return new check.EndpointChecker(db, endpoint)
-  })
-  checkMonitors.forEach((item) => {
-    item.startMonitor()
-  })
+  try {
+    const endpoints = await db.endpoints().allWithoutUser()
+    const checkMonitors = endpoints.map((endpoint, index) => {
+      return new check.EndpointChecker(db, endpoint)
+    })
+    checkMonitors.forEach((item) => {
+      item.startMonitor()
+    })
+  } catch (error) {
+    return false
+  }
 }
 
 setTimeout(checker)

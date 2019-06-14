@@ -2,6 +2,9 @@ const sha1 = require('sha1')
 
 const users = deps => {
   return {
+    /**
+    * Function for get all users
+    */
     all: () => {
       return new Promise((resolve, reject) => {
         const { connection, errorHandler } = deps
@@ -15,10 +18,13 @@ const users = deps => {
         })
       })
     },
-    save: (email, username, access_token) => {
+    /**
+     * Function for save new row to db with params
+     */
+    save: (email, username, accessToken) => {
       return new Promise((resolve, reject) => {
         const { connection, errorHandler } = deps
-        connection.query('INSERT INTO users(email, username, access_token) VALUES(?,?,?)', [email, username, sha1(access_token)], (error, results) => {
+        connection.query('INSERT INTO users(email, username, access_token) VALUES(?,?,?)', [email, username, sha1(accessToken)], (error, results) => {
           if (error) {
             errorHandler(error, `Nepodařilo se uložit uživatele ${email}`, reject)
             return false
@@ -28,6 +34,9 @@ const users = deps => {
         })
       })
     },
+    /**
+     * Function for update specific user
+     */
     update: (user) => {
       return new Promise((resolve, reject) => {
         const { connection, errorHandler } = deps
@@ -43,7 +52,7 @@ const users = deps => {
         })
         connection.query(`UPDATE users SET ${keys.join(', ')} WHERE id = ?`, values.concat(id), (error, users) => {
           if (error || !users.affectedRows) {
-            errorHandler(error, `Nepodařilo se změnit endpoint ${id}`, reject)
+            errorHandler(error, `Nepodařilo se změnit uživatele ${id}`, reject)
             return false
           }
           // resolve promise
@@ -51,6 +60,9 @@ const users = deps => {
         })
       })
     },
+    /**
+     * Function for delete specific user
+     */
     delete: (id) => {
       return new Promise((resolve, reject) => {
         const { connection, errorHandler } = deps

@@ -1,13 +1,13 @@
 const Joi = require('@hapi/joi')
 
 const endpointSchema = Joi.object().keys({
-  id: Joi.number().required(),
-  name: Joi.string().alphanum().min(1).max(30).required(),
-  url: Joi.string().min(3).required(),
+  id: Joi.number(),
+  name: Joi.string().alphanum().min(1).max(30),
+  url: Joi.string().min(3),
   creation: Joi.date(),
   last_check: Joi.date(),
-  interval: Joi.number().min(3).required(),
-  user_id: Joi.number().required()
+  interval: Joi.number().min(3),
+  user_id: Joi.number()
 })
 
 module.exports.endpointSchema = endpointSchema

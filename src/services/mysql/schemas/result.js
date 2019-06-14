@@ -1,11 +1,11 @@
 const Joi = require('@hapi/joi')
 
 const resultSchema = Joi.object().keys({
-  id: Joi.number().required(),
-  last_check: Joi.date().required(),
-  http_status: Joi.number().required(),
-  payload: Joi.string().required(),
-  endpoint_id: Joi.number().required()
+  id: Joi.number(),
+  last_check: Joi.date(),
+  http_status: Joi.number(),
+  payload: Joi.string(),
+  endpoint_id: Joi.number()
 })
 
 module.exports.resultSchema = resultSchema

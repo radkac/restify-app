@@ -1,8 +1,8 @@
 const db = require('../services/mysql')
 const Joi = require('@hapi/joi')
-const userSchema = require('../services/mysql/schemas/user')
-const resultSchema = require('../services/mysql/schemas/result')
-const endpointSchema = require('../services/mysql/schemas/endpoint')
+const { userSchema } = require('../services/mysql/schemas/user')
+const { resultSchema } = require('../services/mysql/schemas/result')
+const { endpointSchema } = require('../services/mysql/schemas/endpoint')
 
 const routes = (server) => {
   server.get('/', (req, res, next) => {
@@ -18,7 +18,7 @@ const routes = (server) => {
   server.post('/authenticate', async (req, res, next) => {
     try {
       const { email, accessToken } = req.params
-      const { error, value } = Joi.validate({ email: email, password: accessToken }, userSchema)
+      const { error, value } = Joi.validate({ email: email, access_token: accessToken }, userSchema)
       if (error) {
         res.send(400, error)
         return
@@ -50,7 +50,7 @@ const routes = (server) => {
   server.post('/user', async (req, res, next) => {
     try {
       const { email, name, password } = req.params
-      const { error, value } = Joi.validate({ user: { email: email, username: name, access_token: password } }, schema)
+      const { error, value } = Joi.validate({ email: email, username: name, access_token: password }, userSchema)
       if (error) {
         res.send(400, error)
         return
@@ -62,22 +62,28 @@ const routes = (server) => {
     next()
   })
 
+  server.get('/currentUser', (req, res, next) => {
+    const user = req.decoded
+    res.send(user)
+  })
+
   /**
-   * @param id (Number - required)
    * @param name (String - optional)
    * @param email (String - optional)
    *
    * @return update specific user in db.users
    */
-  server.put('/user', async (req, res, next) => { // TODO: edit only herself
-    const { id, name, email } = req.params
+  server.put('/user', async (req, res, next) => {
+    const currentUser = req.decoded
+    const { name, email } = req.params
+    const userId = currentUser.id
     try {
-      const { error, value } = Joi.validate({ user: { id, name, email } }, schema)
+      const { error, value } = Joi.validate({ id: userId, username: name, email: email }, userSchema)
       if (error) {
         res.send(400, error)
         return
       }
-      res.send(await db.users().update({ id, name, email }))
+      res.send(await db.users().update({ id: userId, username: name, email: email }))
     } catch (error) {
       res.send(400, error)
     }
@@ -97,19 +103,19 @@ const routes = (server) => {
   })
 
   /**
-   * @param name (String)
+   * @param id (Number - Endpoint id - required)
    *
    * @return new row in db.results
    */
   server.post('/result', async (req, res, next) => {
-    const { name } = req.params
+    const { id } = req.params
     try {
-      const { error, value } = Joi.validate({ result: { name: name } }, schema)
+      const { error, value } = Joi.validate({ id: id }, resultSchema)
       if (error) {
         res.send(400, error)
         return
       }
-      res.send(await db.results().save(name))
+      res.send(await db.results().save(id, { statusCode: 200, body: '' }))
     } catch (error) {
       res.send(400, error)
     }
@@ -123,7 +129,7 @@ const routes = (server) => {
   server.del('/result', async (req, res, next) => {
     const { id } = req.params
     try {
-      const { error, value } = Joi.validate({ result: { id: id } }, schema)
+      const { error, value } = Joi.validate({ id: id }, resultSchema)
       if (error) {
         res.send(400, error)
         return
@@ -140,7 +146,7 @@ const routes = (server) => {
   server.get('/endpoint', async (req, res, next) => {
     try {
       const user = req.decoded
-      const { error, value } = Joi.validate({ user: user }, schema)
+      const { error, value } = Joi.validate({ email: user.email, username: user.name }, userSchema)
       if (error) {
         res.send(400, error)
         return
@@ -163,12 +169,12 @@ const routes = (server) => {
   server.put('/endpoint', async (req, res, next) => {
     const { id, name, url, interval } = req.params
     try {
-      const { error, value } = Joi.validate({ endpoint: { id, name, url, interval } }, schema)
+      const { error, value } = Joi.validate({ id: id, name: name, url: url, interval: interval }, endpointSchema)
       if (error) {
         res.send(400, error)
         return
       }
-      res.send(await db.endpoints().update({ id, name, url, interval }))
+      res.send(await db.endpoints().update({ id: id, name: name, url: url, interval: interval }))
     } catch (error) {
       res.send(400, error)
     }
@@ -185,7 +191,7 @@ const routes = (server) => {
     const { name, url, interval } = req.params
     const user = req.decoded
     try {
-      const { error, value } = Joi.validate({ endpoint: { name: name, url: url, interval: interval }, user: user }, schema)
+      const { error, value } = Joi.validate({ name: name, url: url, interval: interval }, endpointSchema)
       if (error) {
         res.send(400, error)
         return
@@ -204,13 +210,12 @@ const routes = (server) => {
   server.del('/endpoint', async (req, res, next) => {
     const { id } = req.params
     try {
-      const { error, value } = Joi.validate({ endpoint: { id: id } }, schema)
+      const { error, value } = Joi.validate({ id: id }, endpointSchema)
       if (error) {
         res.send(400, error)
         return
       }
-      res.send(await db.results().deleteByEndpoint(id))
-      res.send(await db.endpoints().delete(id))
+      res.send({ results: await db.results().deleteByEndpoint(id), endpoints: db.endpoints().delete(id) })
     } catch (error) {
       res.send(400, error)
     }

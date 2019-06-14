@@ -1,5 +1,8 @@
 const results = deps => {
   return {
+    /**
+     * Function for get all results
+     */
     all: () => {
       return new Promise((resolve, reject) => {
         const { connection, errorHandler } = deps
@@ -13,6 +16,9 @@ const results = deps => {
         })
       })
     },
+    /**
+     * Function for save new row to db with params
+     */
     save: (endpoint, response) => {
       return new Promise((resolve, reject) => {
         const { connection, errorHandler } = deps
@@ -29,19 +35,9 @@ const results = deps => {
         })
       })
     },
-    update: (id, name) => {
-      return new Promise((resolve, reject) => {
-        const { connection, errorHandler } = deps
-        connection.query('UPDATE results SET name = ? WHERE id = ?', [name, id], (error, results) => {
-          if (error || !results.affectedRows) {
-            errorHandler(error, `Nepodařilo se změnit výsledek ${name}`, reject)
-            return false
-          }
-          // resolve promise
-          resolve({ result: { name, id }, affectedRows: results.affectedRows })
-        })
-      })
-    },
+    /**
+     * Function for delete specific Result
+     */
     delete: (id) => {
       return new Promise((resolve, reject) => {
         const { connection, errorHandler } = deps
@@ -55,10 +51,13 @@ const results = deps => {
         })
       })
     },
+    /**
+     * Function for delete all Results by given Endpoint ID
+     */
     deleteByEndpoint: (endpointId) => {
       return new Promise((resolve, reject) => {
         const { connection, errorHandler } = deps
-        connection.query('DELETE FROM results WHERE endpoint_id = ?', [endpointId], (error, results) => {
+        connection.query('DELETE FROM results WHERE endpoint_id = ?', endpointId, (error, results) => {
           if (error || !results.affectedRows) {
             errorHandler(error, `Nepodařilo se smazat endpoint s id ${endpointId}`, reject)
             return false
