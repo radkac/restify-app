@@ -10,8 +10,8 @@ exports.endpoints = function (deps) {
                 var connection = deps.connection, errorHandler = deps.errorHandler;
                 connection.query('SELECT * FROM endpoints WHERE user_id = ?', [user.id], function (error, endpoints) {
                     if (error) {
-                        errorHandler(error, 'Nepodařilo se zobrazit list of endpoints', reject);
-                        return false;
+                        errorHandler(error, 'Nepodařilo se zobrazit list of endpoints');
+                        reject();
                     }
                     // resolve promise
                     return resolve(endpoints);
@@ -26,8 +26,8 @@ exports.endpoints = function (deps) {
                 var connection = deps.connection, errorHandler = deps.errorHandler;
                 connection.query('SELECT * FROM endpoints', function (error, endpoints) {
                     if (error) {
-                        errorHandler(error, 'Nepodařilo se zobrazit list of endpoints', reject);
-                        return false;
+                        errorHandler(error, 'Nepodařilo se zobrazit list of endpoints');
+                        reject();
                     }
                     // resolve promise
                     return resolve(endpoints);
@@ -44,11 +44,11 @@ exports.endpoints = function (deps) {
                 connection.query('INSERT INTO endpoints(`name`, `url`, `creation`, `last_check`, `interval`, `user_id`) ' +
                     'VALUES(?,?,?,?,?,?)', [name, url, date, date, interval, user.id], function (error, endpoints) {
                     if (error) {
-                        errorHandler(error, "Nepoda\u0159ilo se ulo\u017Eit endpoint " + name, reject);
-                        return false;
+                        errorHandler(error, "Nepoda\u0159ilo se ulo\u017Eit endpoint " + name);
+                        reject();
                     }
                     // resolve promise
-                    return resolve({ endpoint: { name: name, url: url, id: endpoints.insertId } });
+                    return resolve({ id: endpoints.insertId, name: name, url: url });
                 });
             });
         },
@@ -68,13 +68,13 @@ exports.endpoints = function (deps) {
                         values.push(endpoint[key]);
                     }
                 });
-                connection.query("UPDATE endpoints SET " + keys.join(', ') + " WHERE id = ?", values.concat(id), function (error, endpoints) {
-                    if (error || !endpoints.affectedRows) {
-                        errorHandler(error, "Nepoda\u0159ilo se zm\u011Bnit endpoint " + id, reject);
-                        return false;
+                connection.query("UPDATE endpoints SET " + keys.join(', ') + " WHERE id = ?", values.concat(id), function (error, endpoint) {
+                    if (error || !endpoint.affectedRows) {
+                        errorHandler(error, "Nepoda\u0159ilo se zm\u011Bnit endpoint " + id);
+                        reject();
                     }
                     // resolve promise
-                    return resolve({ endpoint: endpoints, affectedRows: endpoints.affectedRows });
+                    return resolve({ endpointId: endpoint.id, affectedRows: endpoint.affectedRows });
                 });
             });
         },
@@ -86,8 +86,8 @@ exports.endpoints = function (deps) {
                 var connection = deps.connection, errorHandler = deps.errorHandler;
                 connection.query('DELETE FROM endpoints WHERE id = ?', [id], function (error, endpoints) {
                     if (error || !endpoints.affectedRows) {
-                        errorHandler(error, "Nepoda\u0159ilo se smazat endpoint s id " + id, reject);
-                        return false;
+                        errorHandler(error, "Nepoda\u0159ilo se smazat endpoint s id " + id);
+                        reject();
                     }
                     // resolve promise
                     return resolve({ message: 'Endpoint i výsledky úspěšně odstraněny.', endpointId: id, affectedRows: endpoints.affectedRows });

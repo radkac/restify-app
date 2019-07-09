@@ -1,8 +1,8 @@
 "use strict";
 var request = require("request");
 var EndpointChecker = (function () {
-    function EndpointChecker(connection, endpoint) {
-        this.connection = connection;
+    function EndpointChecker(db, endpoint) {
+        this.db = db;
         this.endpoint = endpoint;
         this.startMonitor = this.startMonitor.bind(this);
     }
@@ -15,8 +15,8 @@ var EndpointChecker = (function () {
                     return;
                 }
                 var date = new Date();
-                _this.connection.endpoints().update({ id: _this.endpoint.id, last_check: date }); // import endpoints
-                _this.connection.results().save(_this.endpoint, response);
+                _this.db.endpointModule.update({ id: _this.endpoint.id, last_check: date }); // import endpoints
+                _this.db.resultModule.save(_this.endpoint, response);
                 resolve('ok');
             });
         });

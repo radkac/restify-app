@@ -8,13 +8,13 @@ exports.users = function (deps) {
         all: function () {
             return new Promise(function (resolve, reject) {
                 var connection = deps.connection, errorHandler = deps.errorHandler;
-                connection.query('SELECT id, email FROM users', function (error, results) {
+                connection.query('SELECT id, email FROM users', function (error, users) {
                     if (error) {
                         errorHandler(error, 'Nepodařilo se zobrazit seznam uživatelů');
                         reject();
                     }
                     // resolve promise
-                    return resolve(results); //users
+                    return resolve(users);
                 });
             });
         },
@@ -24,13 +24,13 @@ exports.users = function (deps) {
         save: function (email, username, accessToken) {
             return new Promise(function (resolve, reject) {
                 var connection = deps.connection, errorHandler = deps.errorHandler;
-                connection.query('INSERT INTO users(email, username, access_token) VALUES(?,?,?)', [email, username, sha1(accessToken)], function (error, results) {
+                connection.query('INSERT INTO users(email, username, access_token) VALUES(?,?,?)', [email, username, sha1(accessToken)], function (error, users) {
                     if (error) {
                         errorHandler(error, "Nepoda\u0159ilo se ulo\u017Eit u\u017Eivatele " + email);
                         reject();
                     }
                     // resolve promise
-                    return resolve({ user: { email: email, username: username, id: results.insertId } });
+                    return resolve({ id: users.insertId, email: email, username: username });
                 });
             });
         },
@@ -50,13 +50,13 @@ exports.users = function (deps) {
                         values.push(user[key]);
                     }
                 });
-                connection.query("UPDATE users SET " + keys.join(', ') + " WHERE id = ?", values.concat(id), function (error, users) {
-                    if (error || !users.affectedRows) {
-                        errorHandler(error, "Nepoda\u0159ilo se zm\u011Bnit u\u017Eivatele " + id, reject);
-                        return false;
+                connection.query("UPDATE users SET " + keys.join(', ') + " WHERE id = ?", values.concat(id), function (error, user) {
+                    if (error || !user.affectedRows) {
+                        errorHandler(error, "Nepoda\u0159ilo se zm\u011Bnit u\u017Eivatele " + id);
+                        reject();
                     }
                     // resolve promise
-                    return resolve({ user: users, affectedRows: users.affectedRows });
+                    return resolve({ userId: id, affectedRows: user.affectedRows });
                 });
             });
         },
@@ -68,8 +68,8 @@ exports.users = function (deps) {
                 var connection = deps.connection, errorHandler = deps.errorHandler;
                 connection.query('DELETE FROM users WHERE id = ?', [id], function (error, results) {
                     if (error || !results.affectedRows) {
-                        errorHandler(error, "Nepoda\u0159ilo se smazat u\u017Eivatele s id " + id, reject);
-                        return false;
+                        errorHandler(error, "Nepoda\u0159ilo se smazat u\u017Eivatele s id " + id);
+                        reject();
                     }
                     // resolve promise
                     return resolve({ message: 'Uživatel úspěšně odstraněn.', affectedRows: results.affectedRows });

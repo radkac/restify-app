@@ -62,30 +62,30 @@ exports.endpoints = (deps) => {
                 const { id } = endpoint;
                 const keys = [];
                 const values = [];
-                const array = ['name', 'url', 'last_check', 'changeInterval'];
+                const array = ['name', 'url', 'last_check', 'interval'];
                 array.forEach((key) => {
                     if (endpoint.hasOwnProperty(key) && endpoint[key] !== undefined) { // prepare only keys which are updating
-                        keys.push(`${key} = ?`);
+                        keys.push('endpoints.' + `${key} = ?`);
                         values.push(endpoint[key]);
                     }
                 });
-                connection.query(`UPDATE endpoints SET ${keys.join(', ')} WHERE id = ?`, values.concat(id), (error, endpoint) => {
-                    if (error || !endpoint.affectedRows) {
+                connection.query(`UPDATE endpoints SET ${keys.join(', ')} WHERE id = ?`, values.concat(id), (error, endpointUpdate) => {
+                    if (error || !endpointUpdate.affectedRows) {
                         errorHandler(error, `Nepodařilo se změnit endpoint ${id}`);
                         reject();
                     }
                     // resolve promise
-                    return resolve({ endpointId: endpoint.id, affectedRows: endpoint.affectedRows });
+                    return resolve({ endpointId: endpoint.id, affectedRows: endpointUpdate.affectedRows });
                 });
             });
         },
         /**
          * Function for delete specific Endpoint by given id
          */
-        delete: (id) => {
+        delete: (id, user) => {
             return new Promise((resolve, reject) => {
                 const { connection, errorHandler } = deps;
-                connection.query('DELETE FROM endpoints WHERE id = ?', [id], (error, endpoints) => {
+                connection.query('DELETE FROM endpoints WHERE id = ? AND user_id = ?', [id, user.id], (error, endpoints) => {
                     if (error || !endpoints.affectedRows) {
                         errorHandler(error, `Nepodařilo se smazat endpoint s id ${id}`);
                         reject();

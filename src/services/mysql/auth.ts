@@ -2,6 +2,7 @@ import * as jwt from "jsonwebtoken";
 
 import { Connection } from 'mysql';
 import { ErrorHandler } from '../mysql';
+import * as conf from '../../config';
 
 export interface Auth {
   authenticate(email: string, accessToken: string): Promise<string>;
@@ -19,13 +20,14 @@ export const auth = (deps: { connection: Connection, errorHandler: ErrorHandler}
         connection.query(queryString, queryData, (error, users) => {
           // handle error
           if (error || !users.length) {
-            errorHandler(error, "Nepodařilo se zobrazit seznam uživatelů");
+            errorHandler(error, "Nepodařilo se vygenerovat autorizační token.");
             reject();
             return false;
           }
           const { email, id } = users[0];
+          console.log(users[0]);
           // use JWT.SECRET for encode
-          const token = jwt.sign({ email, id }, process.env.JWT_SECRET, { expiresIn: 60 * 60 * 24 });
+          const token = jwt.sign({ email, id }, conf.JWT_SECRET, { expiresIn: 60 * 60 * 24 });
           return resolve(token);
         })
       })

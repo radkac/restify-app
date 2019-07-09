@@ -1,4 +1,6 @@
 import * as jwt from "jsonwebtoken";
+import * as conf from '../config';
+
 
 export const jwtMiddleware = (deps: { exclusions: string[] }) => {
   return async (req, res, next) => {
@@ -10,7 +12,7 @@ export const jwtMiddleware = (deps: { exclusions: string[] }) => {
       }
 
       try {
-        req.decoded = jwt.verify(token, process.env.JWT_SECRET)
+        req.decoded = jwt.verify(token, conf.JWT_SECRET)
       } catch (error) {
         res.send(403, { error: 'Token is not autenticated' })
         return false

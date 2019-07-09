@@ -9,8 +9,8 @@ import endpointSchema from "./services/mysql/schemas/endpoint";
 
 export const routes = (server: any) => {
   server.get('/', (res, next) => {
-    res.send('Enjoy the silence!')
-    next()
+    res.send('Enjoy the silence!');
+    next();
   })
 
   /**
@@ -20,26 +20,26 @@ export const routes = (server: any) => {
    */
   server.post('/authenticate', async (req, res) => {
     try {
-      const { email, accessToken } = req.params
-      const { error } = Joi.validate({ email: email, access_token: accessToken }, userSchema)
+      const { email, accessToken } = req.params;
+      const { error } = Joi.validate({ email: email, access_token: accessToken }, userSchema);
       if (error) {
-        res.send(400, error)
-        return
+        res.send(400, error);
+        return;
       }
-      res.send(await db.authModule.authenticate(email, accessToken))
+      res.send(await db.authModule.authenticate(email, accessToken));
     } catch (error) {
-      res.send(400, error)
+      res.send(400, error);
     }
   })
   /**
    * @return all users
    */
-  server.get('/user', async (res) => {
+  server.get('/user', async (res) => { // missing req
     try {
-      const users = await db.usersModule.all()
-      res.send({ results: users })
+      const users = await db.usersModule.all();
+      res.send({ results: users });
     } catch (error) {
-      res.send(400, error)
+      res.send(400, error);
     }
   })
 
@@ -55,19 +55,19 @@ export const routes = (server: any) => {
       const { email, name, password } = req.params
       const { error } = Joi.validate({ email: email, username: name, access_token: password }, userSchema)
       if (error) {
-        res.send(400, error)
-        return
+        res.send(400, error);
+        return;
       }
       res.send(await db.usersModule.save(email, name, password))
     } catch (error) {
-      res.send(400, error)
+      res.send(400, error);
     }
     next()
   })
 
   server.get('/currentUser', (req, res) => {
-    const user = req.decoded
-    res.send(user)
+    const user = req.decoded;
+    res.send(user);
   })
 
   /**
@@ -77,18 +77,18 @@ export const routes = (server: any) => {
    * @return update specific user in db.users
    */
   server.put('/user', async (req, res) => {
-    const currentUser = req.decoded
-    const { name, email } = req.params
-    const userId = currentUser.id
+    const currentUser = req.decoded;
+    const { name, email } = req.params;
+    const userId = currentUser.id;
     try {
       const { error } = Joi.validate({ id: userId, username: name, email: email }, userSchema)
       if (error) {
-        res.send(400, error)
-        return
+        res.send(400, error);
+        return;
       }
       res.send(await db.usersModule.update({ id: userId, username: name, email: email }))
     } catch (error) {
-      res.send(400, error)
+      res.send(400, error);
     }
   })
 
@@ -97,15 +97,11 @@ export const routes = (server: any) => {
    */
   server.get('/result', async (req, res) => {
     try {
-      const results = await db.resultModule.all()
-      const user = req.decoded
-      res.send({ results, user })
-
-
-
-
+      const user = req.decoded;
+      const results = await db.resultModule.all(user);
+      res.send({ results, user });
     } catch (error) {
-      res.send(400, error)
+      res.send(400, error);
     }
   })
 
@@ -115,16 +111,16 @@ export const routes = (server: any) => {
    * @return new row in db.results
    */
   server.post('/result', async (req, res) => {
-    const { id } = req.params
+    const { id } = req.params;
     try {
-      const { error } = Joi.validate({ id: id }, resultSchema)
+      const { error } = Joi.validate({ id: id }, resultSchema);
       if (error) {
-        res.send(400, error)
-        return
+        res.send(400, error);
+        return;
       }
-      res.send(await db.resultModule.save(id, { statusCode: 200, request: req, body: ''}))
+      res.send(await db.resultModule.save(id, { statusCode: 200, request: req, body: '' }));
     } catch (error) {
-      res.send(400, error)
+      res.send(400, error);
     }
   })
 
@@ -134,16 +130,16 @@ export const routes = (server: any) => {
    * @return delete row from db.results
    */
   server.del('/result', async (req, res) => {
-    const { id } = req.params
+    const { id } = req.params;
     try {
-      const { error } = Joi.validate({ id: id }, resultSchema)
+      const { error } = Joi.validate({ id: id }, resultSchema);
       if (error) {
-        res.send(400, error)
-        return
+        res.send(400, error);
+        return;
       }
-      res.send(await db.resultModule.delete(id))
+      res.send(await db.resultModule.delete(id));
     } catch (error) {
-      res.send(400, error)
+      res.send(400, error);
     }
   })
 
@@ -196,7 +192,7 @@ export const routes = (server: any) => {
    */
   server.post('/endpoint', async (req, res) => {
     const { name, url, interval } = req.params
-    const user = req.decoded
+    const user = req.decoded;
     try {
       const { error } = Joi.validate({ name: name, url: url, interval: interval }, endpointSchema)
       if (error) {
@@ -212,19 +208,20 @@ export const routes = (server: any) => {
   /**
    * @param id
    *
-   * @return delete all results for specific endpoint and delete specific endpoint
+   * @return delete all results for specific endpoint and endpoint itself
    */
   server.del('/endpoint', async (req, res) => {
-    const { id } = req.params
+    const { id } = req.params;
+    const user = req.decoded;
     try {
-      const { error } = Joi.validate({ id: id }, endpointSchema)
+      const { error } = Joi.validate({ id: id }, endpointSchema);
       if (error) {
-        res.send(400, error)
-        return
+        res.send(400, error);
+        return;
       }
-      res.send({ results: await db.resultModule.deleteByEndpoint(id), endpoints: db.endpointModule.delete(id) })
+      res.send({ results: await db.resultModule.deleteByEndpoint(id, user), endpoints: db.endpointModule.delete(id, user) });
     } catch (error) {
-      res.send(400, error)
+      res.send(400, error);
     }
   })
 }

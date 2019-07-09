@@ -3,13 +3,13 @@ import { results } from './results';
 import { endpoints } from './endpoints';
 import { users } from './users';
 import { auth } from './auth';
-import * as db from '../../config';
+import * as conf from '../../config';
 
 export const connection = mysqlServer.createConnection({
-  host: db.MYSQL_HOST,
-  user: db.MYSQL_USER,
-  password: db.MYSQL_PASSWORD,
-  database: db.MYSQL_DATABASE
+  host: conf.MYSQL_HOST,
+  user: conf.MYSQL_USER,
+  password: conf.MYSQL_PASSWORD,
+  database: conf.MYSQL_DATABASE
 });
 
 export type ErrorHandler = (error: Error, message: string) => void; 

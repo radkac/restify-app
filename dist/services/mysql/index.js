@@ -5,12 +5,12 @@ const results_1 = require("./results");
 const endpoints_1 = require("./endpoints");
 const users_1 = require("./users");
 const auth_1 = require("./auth");
-const db = require("../../config");
+const conf = require("../../config");
 exports.connection = mysqlServer.createConnection({
-    host: db.MYSQL_HOST,
-    user: db.MYSQL_USER,
-    password: db.MYSQL_PASSWORD,
-    database: db.MYSQL_DATABASE
+    host: conf.MYSQL_HOST,
+    user: conf.MYSQL_USER,
+    password: conf.MYSQL_PASSWORD,
+    database: conf.MYSQL_DATABASE
 });
 const errorHandler = (error, message) => {
     console.log(error, message);

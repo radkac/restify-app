@@ -2,8 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const request = require("request");
 class EndpointChecker {
-    constructor(connection, endpoint) {
-        this.connection = connection;
+    constructor(db, endpoint) {
+        this.db = db;
         this.endpoint = endpoint;
         this.startMonitor = this.startMonitor.bind(this);
     }
@@ -15,9 +15,8 @@ class EndpointChecker {
                     return;
                 }
                 const date = new Date();
-                console.log(this.connection);
-                this.connection.endpoints().update({ id: this.endpoint.id, last_check: date }); // import endpoints
-                this.connection.results().save(this.endpoint, response);
+                this.db.endpointModule.update({ id: this.endpoint.id, last_check: date }); // import endpoints
+                this.db.resultModule.save(this.endpoint, response);
                 resolve('ok');
             });
         });

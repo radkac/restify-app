@@ -38,8 +38,8 @@ test('Delete endpoint', async () => {
     };
     const fakeEndpoints = endpoints_1.endpoints({ connection: fakeConnection, errorHandler: setup_1.errorHandler });
     const fakeResults = results_1.results({ connection: fakeConnection1, errorHandler: setup_1.errorHandler });
-    const resultResult = await fakeResults.deleteByEndpoint(1);
-    const endpointResult = await fakeEndpoints.delete(1);
+    const resultResult = await fakeResults.deleteByEndpoint(1, { id: 1, username: 'Test', email: 'test@test.cz' });
+    const endpointResult = await fakeEndpoints.delete(1, { id: 1, username: 'Test', email: 'test@test.cz' });
     expect(resultResult.affectedRows).not.toBe(0);
     expect(endpointResult.affectedRows).toBe(1);
 });

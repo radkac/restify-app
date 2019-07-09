@@ -95,8 +95,8 @@ exports.routes = (server) => {
      */
     server.get('/result', async (req, res) => {
         try {
-            const results = await db.resultModule.all();
             const user = req.decoded;
+            const results = await db.resultModule.all(user);
             res.send({ results, user });
         }
         catch (error) {
@@ -206,17 +206,18 @@ exports.routes = (server) => {
     /**
      * @param id
      *
-     * @return delete all results for specific endpoint and delete specific endpoint
+     * @return delete all results for specific endpoint and endpoint itself
      */
     server.del('/endpoint', async (req, res) => {
         const { id } = req.params;
+        const user = req.decoded;
         try {
             const { error } = Joi.validate({ id: id }, endpoint_1.default);
             if (error) {
                 res.send(400, error);
                 return;
             }
-            res.send({ results: await db.resultModule.deleteByEndpoint(id), endpoints: db.endpointModule.delete(id) });
+            res.send({ results: await db.resultModule.deleteByEndpoint(id, user), endpoints: db.endpointModule.delete(id, user) });
         }
         catch (error) {
             res.send(400, error);

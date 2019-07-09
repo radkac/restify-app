@@ -5,16 +5,16 @@ exports.results = (deps) => {
         /**
          * Function for get all results
          */
-        all: () => {
+        all: (user) => {
             return new Promise((resolve, reject) => {
                 const { connection, errorHandler } = deps;
-                connection.query('SELECT * FROM results limit 11', (error, results) => {
+                connection.query('SELECT results.* FROM results JOIN endpoints ON results.endpoint_id = endpoints.id WHERE user_id = ? ORDER BY results.last_check DESC limit 10', [user.id], (error, results) => {
                     if (error) {
                         errorHandler(error, 'Nepodařilo se zobrazit seznam výsledků');
                         reject();
                     }
                     // resolve promise
-                    resolve(results);
+                    return resolve(results);
                 });
             });
         },
@@ -56,16 +56,16 @@ exports.results = (deps) => {
         /**
          * Function for delete all Results by given Endpoint ID
          */
-        deleteByEndpoint: (endpointId) => {
+        deleteByEndpoint: (endpointId, user) => {
             return new Promise((resolve, reject) => {
                 const { connection, errorHandler } = deps;
-                connection.query('DELETE FROM results WHERE endpoint_id = ?', endpointId, (error, results) => {
+                connection.query('DELETE r FROM results r JOIN endpoints e ON r.endpoint_id = e.id WHERE r.endpoint_id = ? AND e.user_id = ?', [endpointId, user.id], (error, results) => {
                     if (error || !results.affectedRows) {
                         errorHandler(error, `Nepodařilo se smazat endpoint s id ${endpointId}`);
                         reject();
                     }
                     // resolve promise
-                    return resolve({ endpointId: endpointId, message: 'Endpoint úspěšně odstraněn.', affectedRows: results.affectedRows });
+                    return resolve({ endpointId: endpointId, message: `Výsledky pro endpoint s id ${endpointId} úspěšně odstraněny.`, affectedRows: results.affectedRows });
                 });
             });
         }
