@@ -1,0 +1,14 @@
+"use strict";
+var restify = require("restify");
+var routes = require("./routes");
+var cors_1 = require("./server/cors");
+var jwtMiddleware_1 = require('./server/jwtMiddleware');
+var validator = require("restify-joi-validator");
+var exclusions = ['/authenticate'];
+exports.server = restify.createServer();
+exports.server.pre(cors_1.cors.preflight);
+exports.server.use(cors_1.cors.actual);
+exports.server.use(restify.plugins.bodyParser());
+exports.server.use(jwtMiddleware_1.jwtMiddleware({ exclusions: exclusions }));
+exports.server.use(validator());
+routes.routes(exports.server);
