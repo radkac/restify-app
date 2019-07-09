@@ -40,10 +40,10 @@ exports.routes = function (server) {
     /**
      * @return all users
      */
-    server.get('/user', function (res) __awaiter(this, void 0, void 0, function* () {
+    server.get('/user', function (req, res) __awaiter(this, void 0, void 0, function* () {
         try {
-            var results = yield db.usersModule.all();
-            res.send({ results: results });
+            var users = yield db.usersModule.all();
+            res.send({ results: users });
         }
         catch (error) {
             res.send(400, error);
@@ -123,7 +123,7 @@ exports.routes = function (server) {
                 res.send(400, error);
                 return;
             }
-            res.send(yield db.resultModule.save(id, { statusCode: 200, body: '' }));
+            res.send(yield db.resultModule.save(id, { statusCode: 200, request: req, body: '' }));
         }
         catch (error) {
             res.send(400, error);

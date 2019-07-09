@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const jwt = require("jsonwebtoken");
+const conf = require("../config");
 exports.jwtMiddleware = (deps) => {
     return async (req, res, next) => {
         if (!deps.exclusions.includes(req.href())) {
@@ -10,7 +11,7 @@ exports.jwtMiddleware = (deps) => {
                 return false;
             }
             try {
-                req.decoded = jwt.verify(token, process.env.JWT_SECRET);
+                req.decoded = jwt.verify(token, conf.JWT_SECRET);
             }
             catch (error) {
                 res.send(403, { error: 'Token is not autenticated' });

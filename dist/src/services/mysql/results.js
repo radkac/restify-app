@@ -1,8 +1,5 @@
 "use strict";
-"id";
-;
-exports.results = deps;
-{
+exports.results = function (deps) {
     return {
         /**
          * Function for get all results
@@ -12,11 +9,11 @@ exports.results = deps;
                 var connection = deps.connection, errorHandler = deps.errorHandler;
                 connection.query('SELECT * FROM results limit 11', function (error, results) {
                     if (error) {
-                        errorHandler(error, 'Nepodařilo se zobrazit seznam výsledků', reject);
-                        return false;
+                        errorHandler(error, 'Nepodařilo se zobrazit seznam výsledků');
+                        reject();
                     }
                     // resolve promise
-                    resolve({ results: results });
+                    resolve(results);
                 });
             });
         },
@@ -29,13 +26,13 @@ exports.results = deps;
                 var date = new Date();
                 var endpointId = endpoint.id;
                 connection.query('INSERT INTO results(`last_check`, `http_status`, `payload`, `endpoint_id`) ' +
-                    'VALUES(?,?,?,?)', [date, response.statusCode, response.body, endpointId], function (error, results) {
+                    'VALUES(?,?,?,?)', [date, response.statusCode, response.body, endpointId], function (error, result) {
                     if (error) {
-                        errorHandler(error, "Nepoda\u0159ilo se ulo\u017Eit v\u00FDsledek " + endpointId, reject);
-                        return false;
+                        errorHandler(error, "Nepoda\u0159ilo se ulo\u017Eit v\u00FDsledek " + endpointId);
+                        reject();
                     }
                     // resolve promise
-                    resolve({ result: { endpointId: endpointId, id: results.insertId } });
+                    return resolve(result.insertId);
                 });
             });
         },
@@ -47,11 +44,11 @@ exports.results = deps;
                 var connection = deps.connection, errorHandler = deps.errorHandler;
                 connection.query('DELETE FROM results WHERE id = ?', [id], function (error, results) {
                     if (error || !results.affectedRows) {
-                        errorHandler(error, "Nepoda\u0159ilo se smazat v\u00FDsledek s id " + id, reject);
-                        return false;
+                        errorHandler(error, "Nepoda\u0159ilo se smazat v\u00FDsledek s id " + id);
+                        reject();
                     }
                     // resolve promise
-                    resolve({ message: 'Výsledek úspěšně odstraněn.', affectedRows: results.affectedRows });
+                    return resolve({ message: 'Výsledek úspěšně odstraněn.', affectedRows: results.affectedRows });
                 });
             });
         },
@@ -63,13 +60,13 @@ exports.results = deps;
                 var connection = deps.connection, errorHandler = deps.errorHandler;
                 connection.query('DELETE FROM results WHERE endpoint_id = ?', endpointId, function (error, results) {
                     if (error || !results.affectedRows) {
-                        errorHandler(error, "Nepoda\u0159ilo se smazat endpoint s id " + endpointId, reject);
-                        return false;
+                        errorHandler(error, "Nepoda\u0159ilo se smazat endpoint s id " + endpointId);
+                        reject();
                     }
                     // resolve promise
-                    resolve({ endpointId: endpointId, message: 'Endpoint úspěšně odstraněn.', affectedRows: results.affectedRows });
+                    return resolve({ endpointId: endpointId, message: 'Endpoint úspěšně odstraněn.', affectedRows: results.affectedRows });
                 });
             });
         }
     };
-}
+};

@@ -1,18 +1,16 @@
 import * as request from "request";
 import { Endpoint } from '../mysql/endpoints';
-import { Connection } from 'mysql';
-import * as connection from '../mysql'
 
 
 export default class EndpointChecker {
   endpoint: Endpoint;
-  connection: Connection;
+  db: any;
   timeoutId: NodeJS.Timeout;
 
-  constructor (connection: Connection, endpoint: Endpoint) {
-    this.connection = connection
-    this.endpoint = endpoint
-    this.startMonitor = this.startMonitor.bind(this)
+  constructor (db: any, endpoint: Endpoint) {
+    this.db = db;
+    this.endpoint = endpoint;
+    this.startMonitor = this.startMonitor.bind(this);
   }
 
   check () {
@@ -23,9 +21,8 @@ export default class EndpointChecker {
           return
         }
         const date = new Date();
-        console.log(this.connection);
-        this.connection.endpoints().update({ id: this.endpoint.id, last_check: date }); // import endpoints
-        this.connection.results().save(this.endpoint, response);
+        this.db.endpointModule.update({ id: this.endpoint.id, last_check: date }); // import endpoints
+        this.db.resultModule.save(this.endpoint, response);
         resolve('ok');
       })
     })

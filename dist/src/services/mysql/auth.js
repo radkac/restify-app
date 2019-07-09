@@ -1,5 +1,6 @@
 "use strict";
 var jwt = require("jsonwebtoken");
+var conf = require('../../config');
 ;
 exports.auth = function (deps) {
     return {
@@ -11,17 +12,18 @@ exports.auth = function (deps) {
                 var connection = deps.connection, errorHandler = deps.errorHandler;
                 var queryString = 'SELECT id, email FROM users WHERE email = ? AND access_token = ?';
                 var queryData = [email, accessToken];
-                connection.query(queryString, queryData, function (error, results) {
+                connection.query(queryString, queryData, function (error, users) {
                     // handle error
-                    if (error || !results.length) {
-                        errorHandler(error, "Nepodařilo se zobrazit seznam uživatelů");
+                    if (error || !users.length) {
+                        errorHandler(error, "Nepodařilo se vygenerovat autorizační token.");
                         reject();
                         return false;
                     }
-                    var _a = results[0], email = _a.email, id = _a.id;
+                    var _a = users[0], email = _a.email, id = _a.id;
+                    console.log(users[0]);
                     // use JWT.SECRET for encode
-                    var token = jwt.sign({ email: email, id: id }, process.env.JWT_SECRET, { expiresIn: 60 * 60 * 24 });
-                    return resolve({ token: token });
+                    var token = jwt.sign({ email: email, id: id }, conf.JWT_SECRET, { expiresIn: 60 * 60 * 24 });
+                    return resolve(token);
                 });
             });
         }

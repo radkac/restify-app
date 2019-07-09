@@ -8,6 +8,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 var jwt = require("jsonwebtoken");
+var conf = require('../config');
 exports.jwtMiddleware = function (deps) {
     return function (req, res, next) __awaiter(this, void 0, void 0, function* () {
         if (!deps.exclusions.includes(req.href())) {
@@ -17,7 +18,7 @@ exports.jwtMiddleware = function (deps) {
                 return false;
             }
             try {
-                req.decoded = jwt.verify(token, process.env.JWT_SECRET);
+                req.decoded = jwt.verify(token, conf.JWT_SECRET);
             }
             catch (error) {
                 res.send(403, { error: 'Token is not autenticated' });

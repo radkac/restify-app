@@ -30,7 +30,7 @@ test('Delete user', async () => {
         }) };
     const fakeUsers = users_1.users({ connection: fakeConnection, errorHandler: setup_1.errorHandler });
     const fakeResults = results_1.results({ connection: fakeConnection1, errorHandler: setup_1.errorHandler });
-    const deleteResult = await fakeResults.deleteByEndpoint(1);
+    const deleteResult = await fakeResults.deleteByEndpoint(1, { id: 1, username: 'Test', email: 'test@test.cz' });
     const deleteUser = await fakeUsers.delete(1);
     expect(deleteResult.affectedRows).not.toBe(0);
     expect(deleteUser.affectedRows).toBe(1);

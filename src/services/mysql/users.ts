@@ -67,13 +67,13 @@ export const users = (deps: { connection: Connection, errorHandler: ErrorHandler
             values.push(user[key])
           }
         })
-        connection.query(`UPDATE users SET ${keys.join(', ')} WHERE id = ?`, values.concat(id), (error, user) => {
-          if (error || !user.affectedRows) {
+        connection.query(`UPDATE users SET ${keys.join(', ')} WHERE id = ?`, values.concat(id), (error, userUpdate) => {
+          if (error || !userUpdate.affectedRows) {
             errorHandler(error, `Nepodařilo se změnit uživatele ${id}`)
             reject();
           }
           // resolve promise
-          return resolve({ user: user, affectedRows: user.affectedRows })
+          return resolve({ user: user, affectedRows: userUpdate.affectedRows })
         })
       })
     },
