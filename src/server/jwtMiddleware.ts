@@ -1,6 +1,6 @@
-const jwt = require('jsonwebtoken')
+import * as jwt from "jsonwebtoken";
 
-const jwtMiddleware = (deps) => {
+export const jwtMiddleware = (deps: { exclusions: string[] }) => {
   return async (req, res, next) => {
     if (!deps.exclusions.includes(req.href())) {
       const token = req.headers['x-access-token']
@@ -24,7 +24,8 @@ const jwtMiddleware = (deps) => {
       // })
     }
     next()
+    
+    return false;
   }
 }
 
-module.exports = jwtMiddleware

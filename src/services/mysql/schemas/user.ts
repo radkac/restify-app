@@ -1,4 +1,4 @@
-const Joi = require('@hapi/joi')
+import * as Joi from "@hapi/joi"
 
 const userSchema = Joi.object().keys({
   id: Joi.number(),
@@ -7,4 +7,4 @@ const userSchema = Joi.object().keys({
   email: Joi.string().email({ minDomainSegments: 2 })
 })
 
-module.exports.userSchema = userSchema
+export default userSchema
