@@ -1,4 +1,4 @@
-const Joi = require('@hapi/joi')
+import * as Joi from "@hapi/joi"
 
 const endpointSchema = Joi.object().keys({
   id: Joi.number(),
@@ -10,4 +10,4 @@ const endpointSchema = Joi.object().keys({
   user_id: Joi.number()
 })
 
-module.exports.endpointSchema = endpointSchema
+export default endpointSchema
