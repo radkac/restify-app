@@ -1,17 +1,18 @@
 // import { results, endpoints, users, auth, mysqlServer } from "./services/mysql"; 
-import * as db from "./services/mysql";  
+import { db } from './services/mysql';  
 
-import * as Joi from "@hapi/joi";
+import * as Joi from '@hapi/joi';
 
-import userSchema from "./services/mysql/schemas/user";
-import resultSchema from "./services/mysql/schemas/result";
-import endpointSchema from "./services/mysql/schemas/endpoint";
+import { endpointSchema } from './services/mysql/schemas/endpoint';
+import { resultSchema } from './services/mysql/schemas/result';
+import { userSchema } from './services/mysql/schemas/user';
 
+// tslint:disable-next-line: max-func-body-length
 export const routes = (server: any) => {
   server.get('/', (res, next) => {
     res.send('Enjoy the silence!');
     next();
-  })
+  });
 
   /**
    * @param email (String)
@@ -24,13 +25,14 @@ export const routes = (server: any) => {
       const { error } = Joi.validate({ email: email, access_token: accessToken }, userSchema);
       if (error) {
         res.send(400, error);
+
         return;
       }
       res.send(await db.authModule.authenticate(email, accessToken));
     } catch (error) {
       res.send(400, error);
     }
-  })
+  });
   /**
    * @return all users
    */
@@ -41,7 +43,7 @@ export const routes = (server: any) => {
     } catch (error) {
       res.send(400, error);
     }
-  })
+  });
 
   /**
    * @param email (String)
@@ -52,23 +54,24 @@ export const routes = (server: any) => {
    */
   server.post('/user', async (req, res, next) => {
     try {
-      const { email, name, password } = req.params
-      const { error } = Joi.validate({ email: email, username: name, access_token: password }, userSchema)
+      const { email, name, password } = req.params;
+      const { error } = Joi.validate({ email: email, username: name, access_token: password }, userSchema);
       if (error) {
         res.send(400, error);
+
         return;
       }
-      res.send(await db.usersModule.save(email, name, password))
+      res.send(await db.usersModule.save(email, name, password));
     } catch (error) {
       res.send(400, error);
     }
-    next()
-  })
+    next();
+  });
 
   server.get('/currentUser', (req, res) => {
     const user = req.decoded;
     res.send(user);
-  })
+  });
 
   /**
    * @param name (String - optional)
@@ -81,16 +84,17 @@ export const routes = (server: any) => {
     const { name, email } = req.params;
     const userId = currentUser.id;
     try {
-      const { error } = Joi.validate({ id: userId, username: name, email: email }, userSchema)
+      const { error } = Joi.validate({ id: userId, username: name, email: email }, userSchema);
       if (error) {
         res.send(400, error);
+
         return;
       }
-      res.send(await db.usersModule.update({ id: userId, username: name, email: email }))
+      res.send(await db.usersModule.update({ id: userId, username: name, email: email }));
     } catch (error) {
       res.send(400, error);
     }
-  })
+  });
 
   /**
    * @return get all results for authorized user
@@ -103,7 +107,7 @@ export const routes = (server: any) => {
     } catch (error) {
       res.send(400, error);
     }
-  })
+  });
 
   /**
    * @param id (Number - Endpoint id - required)
@@ -116,13 +120,14 @@ export const routes = (server: any) => {
       const { error } = Joi.validate({ id: id }, resultSchema);
       if (error) {
         res.send(400, error);
+
         return;
       }
       res.send(await db.resultModule.save(id, { statusCode: 200, request: req, body: '' }));
     } catch (error) {
       res.send(400, error);
     }
-  })
+  });
 
   /**
    * @param id (Number - id of Result)
@@ -135,31 +140,33 @@ export const routes = (server: any) => {
       const { error } = Joi.validate({ id: id }, resultSchema);
       if (error) {
         res.send(400, error);
+
         return;
       }
       res.send(await db.resultModule.delete(id));
     } catch (error) {
       res.send(400, error);
     }
-  })
+  });
 
   /**
    * @return all endpoints for specific user
    */
   server.get('/endpoint', async (req, res) => {
     try {
-      const user = req.decoded
-      const { error } = Joi.validate({ email: user.email, username: user.name }, userSchema)
+      const user = req.decoded;
+      const { error } = Joi.validate({ email: user.email, username: user.name }, userSchema);
       if (error) {
-        res.send(400, error)
-        return
+        res.send(400, error);
+
+        return;
       }
-      const endpoints = await db.endpointModule.all(user)
-      res.send({ endpoints })
+      const endpoints = await db.endpointModule.all(user);
+      res.send({ endpoints });
     } catch (error) {
-      res.send(400, error)
+      res.send(400, error);
     }
-  })
+  });
 
   /**
    * @param id (Number)
@@ -170,18 +177,19 @@ export const routes = (server: any) => {
    * @return updated row in db.endpoints
    */
   server.put('/endpoint', async (req, res) => {
-    const { id, name, url, interval } = req.params
+    const { id, name, url, interval } = req.params;
     try {
-      const { error } = Joi.validate({ id: id, name: name, url: url, interval: interval }, endpointSchema)
+      const { error } = Joi.validate({ id: id, name: name, url: url, interval: interval }, endpointSchema);
       if (error) {
-        res.send(400, error)
-        return
+        res.send(400, error);
+
+        return;
       }
-      res.send(await db.endpointModule.update({ id: id, name: name, url: url, interval: interval }))
+      res.send(await db.endpointModule.update({ id: id, name: name, url: url, interval: interval }));
     } catch (error) {
-      res.send(400, error)
+      res.send(400, error);
     }
-  })
+  });
 
   /**
    * @param name
@@ -191,19 +199,20 @@ export const routes = (server: any) => {
    * @return new row in db.endpoints
    */
   server.post('/endpoint', async (req, res) => {
-    const { name, url, interval } = req.params
+    const { name, url, interval } = req.params;
     const user = req.decoded;
     try {
-      const { error } = Joi.validate({ name: name, url: url, interval: interval }, endpointSchema)
+      const { error } = Joi.validate({ name: name, url: url, interval: interval }, endpointSchema);
       if (error) {
-        res.send(400, error)
-        return
+        res.send(400, error);
+
+        return;
       }
-      res.send(await db.endpointModule.save(name, url, interval, user))
+      res.send(await db.endpointModule.save(name, url, interval, user));
     } catch (error) {
-      res.send(400, error)
+      res.send(400, error);
     }
-  })
+  });
 
   /**
    * @param id
@@ -217,13 +226,12 @@ export const routes = (server: any) => {
       const { error } = Joi.validate({ id: id }, endpointSchema);
       if (error) {
         res.send(400, error);
+
         return;
       }
       res.send({ results: await db.resultModule.deleteByEndpoint(id, user), endpoints: db.endpointModule.delete(id, user) });
     } catch (error) {
       res.send(400, error);
     }
-  })
-}
-
-export default routes
+  });
+};

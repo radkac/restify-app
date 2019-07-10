@@ -1,11 +1,16 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const Joi = require("@hapi/joi");
-const userSchema = Joi.object().keys({
+const userSchema = Joi.object()
+    .keys({
     id: Joi.number(),
-    username: Joi.string().alphanum().min(3).max(30),
+    username: Joi.string()
+        .alphanum()
+        .min(3)
+        .max(30),
     access_token: Joi.string(),
-    email: Joi.string().email({ minDomainSegments: 2 })
+    email: Joi.string()
+        .email({ minDomainSegments: 2 }),
 });
-exports.default = userSchema;
+exports.userSchema = userSchema;
 //# sourceMappingURL=user.js.map

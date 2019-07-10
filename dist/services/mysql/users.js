@@ -4,19 +4,18 @@ const sha1 = require("sha1");
 exports.users = (deps) => {
     return {
         /**
-        * Function for get all users
-        */
+         * Function for get all users
+         */
         all: () => {
             return new Promise((resolve, reject) => {
                 const { connection, errorHandler } = deps;
-                connection.query('SELECT id, email FROM users', (error, users) => {
+                connection.query('SELECT id, email FROM users', (error, usersAll) => {
                     if (error) {
                         errorHandler(error, 'Nepodařilo se zobrazit seznam uživatelů');
                         reject();
                         // resolve([]);
                     }
-                    // resolve promise
-                    return resolve(users);
+                    return resolve(usersAll);
                 });
             });
         },
@@ -26,13 +25,13 @@ exports.users = (deps) => {
         save: (email, username, accessToken) => {
             return new Promise((resolve, reject) => {
                 const { connection, errorHandler } = deps;
-                connection.query('INSERT INTO users(email, username, access_token) VALUES(?,?,?)', [email, username, sha1(accessToken)], (error, users) => {
+                connection.query('INSERT INTO users(email, username, access_token) VALUES(?,?,?)', [email, username, sha1(accessToken)], (error, userSaved) => {
                     if (error) {
                         errorHandler(error, `Nepodařilo se uložit uživatele ${email}`);
                         reject();
                     }
                     // resolve promise
-                    return resolve({ id: users.insertId, email, username });
+                    return resolve({ id: userSaved.insertId, email, username });
                 });
             });
         },
@@ -77,7 +76,7 @@ exports.users = (deps) => {
                     return resolve({ message: 'Uživatel úspěšně odstraněn.', affectedRows: results.affectedRows });
                 });
             });
-        }
+        },
     };
 };
 //# sourceMappingURL=users.js.map

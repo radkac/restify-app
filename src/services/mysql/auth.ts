@@ -1,13 +1,13 @@
-import * as jwt from "jsonwebtoken";
+import * as jwt from 'jsonwebtoken';
 
 import { Connection } from 'mysql';
-import { ErrorHandler } from '../mysql';
 import * as conf from '../../config';
+import { ErrorHandler } from '../mysql';
 
-export interface Auth {
+export interface AuthModule {
   authenticate(email: string, accessToken: string): Promise<string>;
-};
-export const auth = (deps: { connection: Connection, errorHandler: ErrorHandler}): Auth => {
+}
+export const auth = (deps: { connection: Connection; errorHandler: ErrorHandler}): AuthModule => {
   return {
     /**
      * Function for authentication user by given email and access_token
@@ -20,17 +20,19 @@ export const auth = (deps: { connection: Connection, errorHandler: ErrorHandler}
         connection.query(queryString, queryData, (error, users) => {
           // handle error
           if (error || !users.length) {
-            errorHandler(error, "Nepodařilo se vygenerovat autorizační token.");
+            errorHandler(error, 'Nepodařilo se vygenerovat autorizační token.');
             reject();
+
             return false;
           }
-          const { email, id } = users[0];
+          const { userEmail, userId } = users[0];
           console.log(users[0]);
           // use JWT.SECRET for encode
-          const token = jwt.sign({ email, id }, conf.JWT_SECRET, { expiresIn: 60 * 60 * 24 });
+          const token = jwt.sign({ userEmail, userId }, conf.JWT_SECRET, { expiresIn: 60 * 60 * 24 });
+
           return resolve(token);
-        })
-      })
-    }
-  }
-}
+        });
+      });
+    },
+  };
+};

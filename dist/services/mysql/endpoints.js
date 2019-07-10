@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-;
 exports.endpoints = (deps) => {
     return {
         /**
@@ -9,13 +8,12 @@ exports.endpoints = (deps) => {
         all: (user) => {
             return new Promise((resolve, reject) => {
                 const { connection, errorHandler } = deps;
-                connection.query('SELECT * FROM endpoints WHERE user_id = ?', [user.id], (error, endpoints) => {
+                connection.query('SELECT * FROM endpoints WHERE user_id = ?', [user.id], (error, endpointsByUser) => {
                     if (error) {
                         errorHandler(error, 'Nepodařilo se zobrazit list of endpoints');
                         reject();
                     }
-                    // resolve promise
-                    return resolve(endpoints);
+                    return resolve(endpointsByUser);
                 });
             });
         },
@@ -25,13 +23,13 @@ exports.endpoints = (deps) => {
         allWithoutUser: () => {
             return new Promise((resolve, reject) => {
                 const { connection, errorHandler } = deps;
-                connection.query('SELECT * FROM endpoints', (error, endpoints) => {
+                connection.query('SELECT * FROM endpoints', (error, endpointsAll) => {
                     if (error) {
                         errorHandler(error, 'Nepodařilo se zobrazit list of endpoints');
                         reject();
                     }
                     // resolve promise
-                    return resolve(endpoints);
+                    return resolve(endpointsAll);
                 });
             });
         },
@@ -42,14 +40,12 @@ exports.endpoints = (deps) => {
             return new Promise((resolve, reject) => {
                 const { connection, errorHandler } = deps;
                 const date = new Date();
-                connection.query('INSERT INTO endpoints(`name`, `url`, `creation`, `last_check`, `interval`, `user_id`) ' +
-                    'VALUES(?,?,?,?,?,?)', [name, url, date, date, interval, user.id], (error, endpoints) => {
+                connection.query('INSERT INTO endpoints(`name`, `url`, `creation`, `last_check`, `interval`, `user_id`) VALUES(?,?,?,?,?,?)', [name, url, date, date, interval, user.id], (error, endpointSaved) => {
                     if (error) {
                         errorHandler(error, `Nepodařilo se uložit endpoint ${name}`);
                         reject();
                     }
-                    // resolve promise
-                    return resolve({ id: endpoints.insertId, name, url });
+                    return resolve({ id: endpointSaved.insertId, name, url });
                 });
             });
         },
@@ -60,41 +56,40 @@ exports.endpoints = (deps) => {
             return new Promise((resolve, reject) => {
                 const { connection, errorHandler } = deps;
                 const { id } = endpoint;
-                const keys = [];
+                const columns = [];
                 const values = [];
-                const array = ['name', 'url', 'last_check', 'interval'];
-                array.forEach((key) => {
+                const keys = ['name', 'url', 'last_check', 'interval'];
+                keys.forEach((key) => {
                     if (endpoint.hasOwnProperty(key) && endpoint[key] !== undefined) { // prepare only keys which are updating
-                        keys.push('endpoints.' + `${key} = ?`);
+                        columns.push(`endpoints.${key} = ?`);
                         values.push(endpoint[key]);
                     }
                 });
-                connection.query(`UPDATE endpoints SET ${keys.join(', ')} WHERE id = ?`, values.concat(id), (error, endpointUpdate) => {
-                    if (error || !endpointUpdate.affectedRows) {
+                connection.query(`UPDATE endpoints SET ${columns.join(', ')} WHERE id = ?`, values.concat(id), (error, endpointUpdated) => {
+                    if (error || !endpointUpdated.affectedRows) {
                         errorHandler(error, `Nepodařilo se změnit endpoint ${id}`);
                         reject();
                     }
-                    // resolve promise
-                    return resolve({ endpointId: endpoint.id, affectedRows: endpointUpdate.affectedRows });
+                    return resolve({ endpointId: endpoint.id, affectedRows: endpointUpdated.affectedRows });
                 });
             });
         },
         /**
-         * Function for delete specific Endpoint by given id
+         * Function for deleting specific Endpoint by given id
          */
         delete: (id, user) => {
             return new Promise((resolve, reject) => {
                 const { connection, errorHandler } = deps;
-                connection.query('DELETE FROM endpoints WHERE id = ? AND user_id = ?', [id, user.id], (error, endpoints) => {
-                    if (error || !endpoints.affectedRows) {
+                connection.query('DELETE FROM endpoints WHERE id = ? AND user_id = ?', [id, user.id], (error, endpointDeleted) => {
+                    if (error || !endpointDeleted.affectedRows) {
                         errorHandler(error, `Nepodařilo se smazat endpoint s id ${id}`);
                         reject();
                     }
-                    // resolve promise
-                    return resolve({ message: 'Endpoint i výsledky úspěšně odstraněny.', endpointId: id, affectedRows: endpoints.affectedRows });
+                    return resolve({ message: 'Endpoint i výsledky úspěšně odstraněny.', endpointId: id, affectedRows: endpointDeleted.affectedRows,
+                    });
                 });
             });
-        }
+        },
     };
 };
 //# sourceMappingURL=endpoints.js.map
