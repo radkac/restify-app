@@ -11,27 +11,30 @@ class EndpointChecker {
         return new Promise((resolve, reject) => {
             request(this.endpoint.url, (error, response) => {
                 if (error) {
-                    reject(error);
-                    return;
+                    return reject(error);
                 }
-                const date = new Date();
-                this.db.endpointModule.update({ id: this.endpoint.id, last_check: date }); // import endpoints
-                this.db.resultModule.save(this.endpoint, response);
-                resolve('ok');
+                else {
+                    const date = new Date();
+                    this.db.endpointModule.update({ id: this.endpoint.id, last_check: date });
+                    this.db.resultModule.save(this.endpoint, response);
+                    return resolve('ok');
+                }
             });
         });
     }
     startMonitor() {
-        this.check().then(() => {
-            this.timeoutId = setTimeout(this.startMonitor, this.endpoint.interval);
-        }).catch((error) => {
+        this.check()
+            .then(() => {
+            this.timeoutId = setInterval(this.startMonitor, this.endpoint.interval);
+        })
+            .catch((error) => {
             console.error('Error:', error);
-            this.timeoutId = setTimeout(this.startMonitor, this.endpoint.interval);
+            this.timeoutId = setInterval(this.startMonitor, this.endpoint.interval);
         });
     }
     stopMonitor() {
         clearTimeout(this.timeoutId);
     }
 }
-exports.default = EndpointChecker;
+exports.EndpointChecker = EndpointChecker;
 //# sourceMappingURL=check.js.map

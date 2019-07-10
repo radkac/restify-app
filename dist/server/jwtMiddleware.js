@@ -1,9 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const tslib_1 = require("tslib");
 const jwt = require("jsonwebtoken");
 const conf = require("../config");
 exports.jwtMiddleware = (deps) => {
-    return async (req, res, next) => {
+    return (req, res, next) => tslib_1.__awaiter(this, void 0, void 0, function* () {
         if (!deps.exclusions.includes(req.href())) {
             const token = req.headers['x-access-token'];
             if (!token) {
@@ -25,8 +26,7 @@ exports.jwtMiddleware = (deps) => {
             //   }
             // })
         }
-        next();
-        return false;
-    };
+        return next();
+    });
 };
 //# sourceMappingURL=jwtMiddleware.js.map

@@ -2,7 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const jwt = require("jsonwebtoken");
 const conf = require("../../config");
-;
 exports.auth = (deps) => {
     return {
         /**
@@ -16,18 +15,18 @@ exports.auth = (deps) => {
                 connection.query(queryString, queryData, (error, users) => {
                     // handle error
                     if (error || !users.length) {
-                        errorHandler(error, "Nepodařilo se vygenerovat autorizační token.");
+                        errorHandler(error, 'Nepodařilo se vygenerovat autorizační token.');
                         reject();
                         return false;
                     }
-                    const { email, id } = users[0];
+                    const { userEmail, userId } = users[0];
                     console.log(users[0]);
                     // use JWT.SECRET for encode
-                    const token = jwt.sign({ email, id }, conf.JWT_SECRET, { expiresIn: 60 * 60 * 24 });
+                    const token = jwt.sign({ userEmail, userId }, conf.JWT_SECRET, { expiresIn: 60 * 60 * 24 });
                     return resolve(token);
                 });
             });
-        }
+        },
     };
 };
 //# sourceMappingURL=auth.js.map
