@@ -15,15 +15,15 @@ export class EndpointChecker {
 
   public check () {
     return new Promise((resolve, reject) => {
-      request(this.endpoint.url, (error, response) => {
+      request(this.endpoint.url, async (error, response) => {
         if (error) {
           return reject(error);
         }
         else {
           const date = new Date();
-          this.db.endpointModule.update({ id: this.endpoint.id, last_check: date });
-          this.db.resultModule.save(this.endpoint, response);
-
+          await this.db.endpointModule.update({ id: this.endpoint.id, last_check: date });
+          await this.db.resultModule.save(this.endpoint, response);
+          
           return resolve('ok');
         }
       });
@@ -33,11 +33,11 @@ export class EndpointChecker {
   public startMonitor () {
     this.check()
       .then(() => {
-        this.timeoutId = setInterval(this.startMonitor, this.endpoint.interval);
+        this.timeoutId = setTimeout(this.startMonitor, this.endpoint.interval);
       })
       .catch((error) => {
         console.error('Error:', error);
-        this.timeoutId = setInterval(this.startMonitor, this.endpoint.interval);
+        this.timeoutId = setTimeout(this.startMonitor, this.endpoint.interval);
       });
   }
 

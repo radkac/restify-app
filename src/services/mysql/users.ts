@@ -1,6 +1,7 @@
-import { Connection } from 'mysql';
+import { reject } from 'bluebird';
 import sha1 = require('sha1');
-import { ErrorHandler } from '.';
+import { ErrorHandler, sequelize } from '.';
+import { UserModel } from './userModel';
 
 export type User = {
   id: number;
@@ -12,89 +13,108 @@ export type User = {
 export interface UsersModule {
   all(): Promise<User[]>;
   save(email: string, username: string, accessToken: string): Promise<User>;
-  update(user: User): Promise<{ user: User; affectedRows: number }>;
-  delete(id: number): Promise<{ message: string; affectedRows: number }>;
+  update(user: User): Promise<{ user: any; affectedRows: number }>;
+  delete(userId: number): Promise<{ message: string; affectedRows: number }>;
 }
 
-export const users = (deps: { connection: Connection; errorHandler: ErrorHandler }): UsersModule => {
+// tslint:disable-next-line: max-func-body-length
+export const users = (errorHandler: ErrorHandler): UsersModule => {
   return {
     /**
      * Function for get all users
      */
     all: (): Promise<User[]> => {
       return new Promise((resolve, reject) => {
-        const { connection, errorHandler } = deps;
-        connection.query('SELECT id, email FROM users', (error, usersAll) => {
-          if (error) {
-            errorHandler(error, 'Nepodařilo se zobrazit seznam uživatelů');
-            reject();
-            // resolve([]);
-          }
+        UserModel.findAll()
+          .then(usersList => {
+            if (usersList === null) {
+              errorHandler(undefined, 'Nepodařilo se zobrazit list of users');
 
-          return resolve(usersAll);
-        });
-      });
+              return reject();
+            }
+            else {
+              return resolve(usersList);
+            }
+          }); 
+      }); 
     },
+
     /**
      * Function for save new row to db with params
      */
     save: (email: string, username: string, accessToken: string): Promise<User> => {
-      return new Promise((resolve, reject) => {
-        const { connection, errorHandler } = deps;
-        connection.query('INSERT INTO users(email, username, access_token) VALUES(?,?,?)',
-                         [email, username, sha1(accessToken)], (error, userSaved) => {
-          if (error) {
-            errorHandler(error, `Nepodařilo se uložit uživatele ${email}`);
-            reject();
-          }
-
-          // resolve promise
-          return resolve({ id: userSaved.insertId, email, username });
+      return new Promise((resolve) => {
+        UserModel
+        .create({ email, username, accessToken: sha1(accessToken) })
+        .then(userSaved => UserModel.findOrCreate({ where: { id: userSaved.id }}))
+        .then(([user, created]) => {
+          console.log(user.get({
+            plain: true,
+          }));
+          console.log(created);
+          resolve({ id: user.id, email, username });
+        })
+        .catch(([error, user]) => {
+          console.log(error);
+          errorHandler(undefined, `Nepodařilo se uložit uživatele ${user.id}`);
+          reject(error);
         });
       });
     },
     /**
      * Function for update specific user
      */
-    update: (user: User): Promise<{ user: User; affectedRows: number }> => {
+    update: (user: User): Promise<{ user: any; affectedRows: number }> => {
       return new Promise((resolve, reject) => {
-        const { connection, errorHandler } = deps;
         const { id } = user;
         const keys = [];
         const values = [];
-        const array = [ 'username', 'email' ];
+        const array = ['username', 'email'];
         array.forEach((key) => { // filter only allowed values
           if (user.hasOwnProperty(key) && user[key] !== undefined) { // prepare only keys which are updating
             keys.push(`${key} = ?`);
             values.push(user[key]);
           }
         });
-        connection.query(`UPDATE users SET ${keys.join(', ')} WHERE id = ?`, values.concat(id), (error, userUpdate) => {
-          if (error || !userUpdate.affectedRows) {
-            errorHandler(error, `Nepodařilo se změnit uživatele ${id}`);
-            reject();
-          }
 
-          // resolve promise
-          return resolve({ user: user, affectedRows: userUpdate.affectedRows });
-        });
+        // `UPDATE users SET ${keys.join(', ')} WHERE id = ?`, values.concat(id),
+
+        sequelize.query(`UPDATE users SET ${keys.join(', ')} WHERE id = ?`, { replacements: [values.concat(id)] })
+          .then(updatedUser => {
+            // console.log(results.get({
+            //   plain: true,
+            // }));
+            console.log(updatedUser);
+
+            return resolve({ user: updatedUser, affectedRows: 1 }); // get affected Rows
+          })
+          .catch(([error, updatedUser]) => {
+            console.log(error);
+            if (error || !updatedUser.affectedRows) {
+              errorHandler(undefined, `Nepodařilo se uložit uživatele ${updatedUser.id}`);
+              reject(error);
+            }
+          });
       });
     },
     /**
      * Function for delete specific user
      */
-    delete: (id: number): Promise<{ message: string; affectedRows: number}> => {
+    delete: (userId: number): Promise<{ message: string; affectedRows: number}> => {
       return new Promise((resolve, reject) => {
-        const { connection, errorHandler } = deps;
-        connection.query('DELETE FROM users WHERE id = ?', [id], (error, results) => {
-          if (error || !results.affectedRows) {
-            errorHandler(error, `Nepodařilo se smazat uživatele s id ${id}`);
-            reject();
-          }
+        UserModel.destroy({where: { id: userId }})
+          .then(deletedUser => {
+            console.log(deletedUser);
+            const affectedRows = UserModel.findAll();
+            if (affectedRows === null) {
+            errorHandler(undefined, `Nepodařilo se smazat uživatele s id ${deletedUser}`);
 
-          // resolve promise
-          return resolve({ message: 'Uživatel úspěšně odstraněn.', affectedRows: results.affectedRows });
-        });
+            return reject();
+            }
+            else {
+              return resolve({message: 'Uživatel úspěšně odstraněn.', affectedRows: Object.keys(affectedRows).length});
+            }
+          });
       });
     },
   };

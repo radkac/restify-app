@@ -1,19 +1,26 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.endpoints = (deps) => {
+const endpointModel_1 = require("./endpointModel");
+const setup_1 = require("./tests/setup");
+// tslint:disable-next-line: max-func-body-length
+exports.endpoints = (errorHandler) => {
     return {
         /**
          * Function for get all Endpoints by given user
          */
         all: (user) => {
             return new Promise((resolve, reject) => {
-                const { connection, errorHandler } = deps;
-                connection.query('SELECT * FROM endpoints WHERE user_id = ?', [user.id], (error, endpointsByUser) => {
-                    if (error) {
-                        errorHandler(error, 'Nepodařilo se zobrazit list of endpoints');
-                        reject();
+                endpointModel_1.EndpointModel.findAll({
+                    where: { user_id: user.id },
+                })
+                    .then(endpointsList => {
+                    if (endpointsList === null) {
+                        errorHandler(undefined, 'Nepodařilo se zobrazit list of endpoints');
+                        return reject();
                     }
-                    return resolve(endpointsByUser);
+                    else {
+                        return resolve(endpointsList);
+                    }
                 });
             });
         },
@@ -22,14 +29,15 @@ exports.endpoints = (deps) => {
          */
         allWithoutUser: () => {
             return new Promise((resolve, reject) => {
-                const { connection, errorHandler } = deps;
-                connection.query('SELECT * FROM endpoints', (error, endpointsAll) => {
-                    if (error) {
-                        errorHandler(error, 'Nepodařilo se zobrazit list of endpoints');
-                        reject();
+                endpointModel_1.EndpointModel.findAll()
+                    .then(endpointsList => {
+                    if (endpointsList === null) {
+                        errorHandler(undefined, 'Nepodařilo se zobrazit list of endpoints');
+                        return reject();
                     }
-                    // resolve promise
-                    return resolve(endpointsAll);
+                    else {
+                        return resolve(endpointsList);
+                    }
                 });
             });
         },
@@ -38,14 +46,21 @@ exports.endpoints = (deps) => {
          */
         save: (name, url, interval, user) => {
             return new Promise((resolve, reject) => {
-                const { connection, errorHandler } = deps;
                 const date = new Date();
-                connection.query('INSERT INTO endpoints(`name`, `url`, `creation`, `last_check`, `interval`, `user_id`) VALUES(?,?,?,?,?,?)', [name, url, date, date, interval, user.id], (error, endpointSaved) => {
-                    if (error) {
-                        errorHandler(error, `Nepodařilo se uložit endpoint ${name}`);
-                        reject();
-                    }
-                    return resolve({ id: endpointSaved.insertId, name, url });
+                endpointModel_1.EndpointModel
+                    .create({ name, url, creation: date, lastCheck: date, interval, user_id: user.id })
+                    .then(endpointSaved => endpointModel_1.EndpointModel.findOrCreate({ where: { id: endpointSaved.id } }))
+                    .then(([endpointSaved, created]) => {
+                    console.log(endpointSaved.get({
+                        plain: true,
+                    }));
+                    console.log(created);
+                    return resolve({ id: endpointSaved.id, name, url });
+                })
+                    .catch(([error, endpoint]) => {
+                    console.log(error);
+                    errorHandler(undefined, `Nepodařilo se uložit endpoint ${endpoint.id}`);
+                    reject(error);
                 });
             });
         },
@@ -54,7 +69,6 @@ exports.endpoints = (deps) => {
          */
         update: (endpoint) => {
             return new Promise((resolve, reject) => {
-                const { connection, errorHandler } = deps;
                 const { id } = endpoint;
                 const columns = [];
                 const values = [];
@@ -65,12 +79,17 @@ exports.endpoints = (deps) => {
                         values.push(endpoint[key]);
                     }
                 });
-                connection.query(`UPDATE endpoints SET ${columns.join(', ')} WHERE id = ?`, values.concat(id), (error, endpointUpdated) => {
+                setup_1.sequelize.query(`UPDATE endpoints SET ${keys.join(', ')} WHERE id = ?`, { replacements: [values.concat(id)] })
+                    .then(endpointUpdated => {
+                    console.log(endpointUpdated);
+                    return resolve({ endpointId: id, affectedRows: 1 }); // get affected Rows
+                })
+                    .catch(([error, endpointUpdated]) => {
+                    console.log(error);
                     if (error || !endpointUpdated.affectedRows) {
-                        errorHandler(error, `Nepodařilo se změnit endpoint ${id}`);
-                        reject();
+                        errorHandler(undefined, `Nepodařilo se uložit změnit endpoint ${id}`);
+                        reject(error);
                     }
-                    return resolve({ endpointId: endpoint.id, affectedRows: endpointUpdated.affectedRows });
                 });
             });
         },
@@ -79,14 +98,18 @@ exports.endpoints = (deps) => {
          */
         delete: (id, user) => {
             return new Promise((resolve, reject) => {
-                const { connection, errorHandler } = deps;
-                connection.query('DELETE FROM endpoints WHERE id = ? AND user_id = ?', [id, user.id], (error, endpointDeleted) => {
-                    if (error || !endpointDeleted.affectedRows) {
-                        errorHandler(error, `Nepodařilo se smazat endpoint s id ${id}`);
-                        reject();
+                // const errorHandler = deps;
+                endpointModel_1.EndpointModel.destroy({ where: { id, user_id: user.id } })
+                    .then(deletedEndpoint => {
+                    console.log(deletedEndpoint);
+                    const affectedRows = endpointModel_1.EndpointModel.findAll();
+                    if (affectedRows === null) {
+                        errorHandler(undefined, `Nepodařilo se smazat uživatele s id ${deletedEndpoint}`);
+                        return reject();
                     }
-                    return resolve({ message: 'Endpoint i výsledky úspěšně odstraněny.', endpointId: id, affectedRows: endpointDeleted.affectedRows,
-                    });
+                    else {
+                        return resolve({ message: 'Endpoint úspěšně odstraněn.', endpointId: id, affectedRows: Object.keys(affectedRows).length });
+                    }
                 });
             });
         },

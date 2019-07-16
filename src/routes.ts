@@ -5,12 +5,12 @@ import * as Joi from '@hapi/joi';
 
 import { endpointSchema } from './services/mysql/schemas/endpoint';
 import { resultSchema } from './services/mysql/schemas/result';
-import { userSchema } from './services/mysql/schemas/user';
+import { authenticationSchema, createUserSchema, userSchema } from './services/mysql/schemas/user';
 
 // tslint:disable-next-line: max-func-body-length
 export const routes = (server: any) => {
   server.get('/', (res, next) => {
-    res.send('Enjoy the silence!');
+    res.send(200, 'Enjoy the silence!');
     next();
   });
 
@@ -22,26 +22,33 @@ export const routes = (server: any) => {
   server.post('/authenticate', async (req, res) => {
     try {
       const { email, accessToken } = req.params;
-      const { error } = Joi.validate({ email: email, access_token: accessToken }, userSchema);
+      const { error } = Joi.validate({ email: email, access_token: accessToken }, authenticationSchema);
+      
       if (error) {
         res.send(400, error);
 
         return;
       }
-      res.send(await db.authModule.authenticate(email, accessToken));
+
+      res.send(200, await db.authModule.authenticate(email, accessToken));
     } catch (error) {
-      res.send(400, error);
+      if (error === 401) {
+        res.send(401, 'Neautorizovaný požadavek.');
+      }
+      if (error === 500) {
+        res.send(500, 'Nepodařilo se vygenerovat veřejný token.');
+      }
     }
   });
   /**
    * @return all users
    */
-  server.get('/user', async (res) => { // missing req
+  server.get('/user', async (_, res) => {
     try {
       const users = await db.usersModule.all();
-      res.send({ results: users });
+      res.send(200, { results: users });
     } catch (error) {
-      res.send(400, error);
+      res.send(500, error);
     }
   });
 
@@ -55,22 +62,22 @@ export const routes = (server: any) => {
   server.post('/user', async (req, res, next) => {
     try {
       const { email, name, password } = req.params;
-      const { error } = Joi.validate({ email: email, username: name, access_token: password }, userSchema);
+      const { error } = Joi.validate({ email, username: name, access_token: password }, createUserSchema);
       if (error) {
         res.send(400, error);
 
         return;
       }
-      res.send(await db.usersModule.save(email, name, password));
+      res.send(201, await db.usersModule.save(email, name, password));
     } catch (error) {
-      res.send(400, error);
+      res.send(500, error);
     }
     next();
   });
 
   server.get('/currentUser', (req, res) => {
     const user = req.decoded;
-    res.send(user);
+    res.send(200, user);
   });
 
   /**
@@ -90,9 +97,9 @@ export const routes = (server: any) => {
 
         return;
       }
-      res.send(await db.usersModule.update({ id: userId, username: name, email: email }));
+      res.send(200, await db.usersModule.update({ id: userId, username: name, email }));
     } catch (error) {
-      res.send(400, error);
+      res.send(500, error);
     }
   });
 
@@ -103,9 +110,9 @@ export const routes = (server: any) => {
     try {
       const user = req.decoded;
       const results = await db.resultModule.all(user);
-      res.send({ results, user });
+      res.send(200, { results, user });
     } catch (error) {
-      res.send(400, error);
+      res.send(500, error);
     }
   });
 
@@ -123,9 +130,9 @@ export const routes = (server: any) => {
 
         return;
       }
-      res.send(await db.resultModule.save(id, { statusCode: 200, request: req, body: '' }));
+      res.send(201, await db.resultModule.save(id, { statusCode: 200, request: req, body: '' }));
     } catch (error) {
-      res.send(400, error);
+      res.send(500, error);
     }
   });
 
@@ -143,9 +150,9 @@ export const routes = (server: any) => {
 
         return;
       }
-      res.send(await db.resultModule.delete(id));
+      res.send(200, await db.resultModule.delete(id));
     } catch (error) {
-      res.send(400, error);
+      res.send(500, error);
     }
   });
 
@@ -162,9 +169,9 @@ export const routes = (server: any) => {
         return;
       }
       const endpoints = await db.endpointModule.all(user);
-      res.send({ endpoints });
+      res.send(200, { endpoints });
     } catch (error) {
-      res.send(400, error);
+      res.send(500, error);
     }
   });
 
@@ -185,9 +192,9 @@ export const routes = (server: any) => {
 
         return;
       }
-      res.send(await db.endpointModule.update({ id: id, name: name, url: url, interval: interval }));
+      res.send(200, await db.endpointModule.update({ id, name, url, interval }));
     } catch (error) {
-      res.send(400, error);
+      res.send(500, error);
     }
   });
 
@@ -208,9 +215,9 @@ export const routes = (server: any) => {
 
         return;
       }
-      res.send(await db.endpointModule.save(name, url, interval, user));
+      res.send(201, await db.endpointModule.save(name, url, interval, user));
     } catch (error) {
-      res.send(400, error);
+      res.send(500, error);
     }
   });
 
@@ -229,9 +236,9 @@ export const routes = (server: any) => {
 
         return;
       }
-      res.send({ results: await db.resultModule.deleteByEndpoint(id, user), endpoints: db.endpointModule.delete(id, user) });
+      res.send(200, { results: await db.resultModule.deleteByEndpoint(id, user), endpoints: db.endpointModule.delete(id, user) });
     } catch (error) {
-      res.send(400, error);
+      res.send(500, error);
     }
   });
 };

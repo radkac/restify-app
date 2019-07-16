@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const tslib_1 = require("tslib");
 // import { results, endpoints, users, auth, mysqlServer } from "./services/mysql"; 
 const mysql_1 = require("./services/mysql");
 const Joi = require("@hapi/joi");
@@ -10,7 +9,7 @@ const user_1 = require("./services/mysql/schemas/user");
 // tslint:disable-next-line: max-func-body-length
 exports.routes = (server) => {
     server.get('/', (res, next) => {
-        res.send('Enjoy the silence!');
+        res.send(200, 'Enjoy the silence!');
         next();
     });
     /**
@@ -18,32 +17,37 @@ exports.routes = (server) => {
      * @param accessToken (String)
      * @return authenticationToken (x-access-token)
      */
-    server.post('/authenticate', (req, res) => tslib_1.__awaiter(this, void 0, void 0, function* () {
+    server.post('/authenticate', async (req, res) => {
         try {
             const { email, accessToken } = req.params;
-            const { error } = Joi.validate({ email: email, access_token: accessToken }, user_1.userSchema);
+            const { error } = Joi.validate({ email: email, access_token: accessToken }, user_1.authenticationSchema);
             if (error) {
                 res.send(400, error);
                 return;
             }
-            res.send(yield mysql_1.db.authModule.authenticate(email, accessToken));
+            res.send(200, await mysql_1.db.authModule.authenticate(email, accessToken));
         }
         catch (error) {
-            res.send(400, error);
+            if (error === 401) {
+                res.send(401, 'Neautorizovaný požadavek.');
+            }
+            if (error === 500) {
+                res.send(500, 'Nepodařilo se vygenerovat veřejný token.');
+            }
         }
-    }));
+    });
     /**
      * @return all users
      */
-    server.get('/user', (res) => tslib_1.__awaiter(this, void 0, void 0, function* () {
+    server.get('/user', async (_, res) => {
         try {
-            const users = yield mysql_1.db.usersModule.all();
-            res.send({ results: users });
+            const users = await mysql_1.db.usersModule.all();
+            res.send(200, { results: users });
         }
         catch (error) {
-            res.send(400, error);
+            res.send(500, error);
         }
-    }));
+    });
     /**
      * @param email (String)
      * @param name (String)
@@ -51,24 +55,24 @@ exports.routes = (server) => {
      *
      * @return new row in db.users
      */
-    server.post('/user', (req, res, next) => tslib_1.__awaiter(this, void 0, void 0, function* () {
+    server.post('/user', async (req, res, next) => {
         try {
             const { email, name, password } = req.params;
-            const { error } = Joi.validate({ email: email, username: name, access_token: password }, user_1.userSchema);
+            const { error } = Joi.validate({ email, username: name, access_token: password }, user_1.createUserSchema);
             if (error) {
                 res.send(400, error);
                 return;
             }
-            res.send(yield mysql_1.db.usersModule.save(email, name, password));
+            res.send(201, await mysql_1.db.usersModule.save(email, name, password));
         }
         catch (error) {
-            res.send(400, error);
+            res.send(500, error);
         }
         next();
-    }));
+    });
     server.get('/currentUser', (req, res) => {
         const user = req.decoded;
-        res.send(user);
+        res.send(200, user);
     });
     /**
      * @param name (String - optional)
@@ -76,7 +80,7 @@ exports.routes = (server) => {
      *
      * @return update specific user in db.users
      */
-    server.put('/user', (req, res) => tslib_1.__awaiter(this, void 0, void 0, function* () {
+    server.put('/user', async (req, res) => {
         const currentUser = req.decoded;
         const { name, email } = req.params;
         const userId = currentUser.id;
@@ -86,31 +90,31 @@ exports.routes = (server) => {
                 res.send(400, error);
                 return;
             }
-            res.send(yield mysql_1.db.usersModule.update({ id: userId, username: name, email: email }));
+            res.send(200, await mysql_1.db.usersModule.update({ id: userId, username: name, email }));
         }
         catch (error) {
-            res.send(400, error);
+            res.send(500, error);
         }
-    }));
+    });
     /**
      * @return get all results for authorized user
      */
-    server.get('/result', (req, res) => tslib_1.__awaiter(this, void 0, void 0, function* () {
+    server.get('/result', async (req, res) => {
         try {
             const user = req.decoded;
-            const results = yield mysql_1.db.resultModule.all(user);
-            res.send({ results, user });
+            const results = await mysql_1.db.resultModule.all(user);
+            res.send(200, { results, user });
         }
         catch (error) {
-            res.send(400, error);
+            res.send(500, error);
         }
-    }));
+    });
     /**
      * @param id (Number - Endpoint id - required)
      *
      * @return new row in db.results
      */
-    server.post('/result', (req, res) => tslib_1.__awaiter(this, void 0, void 0, function* () {
+    server.post('/result', async (req, res) => {
         const { id } = req.params;
         try {
             const { error } = Joi.validate({ id: id }, result_1.resultSchema);
@@ -118,18 +122,18 @@ exports.routes = (server) => {
                 res.send(400, error);
                 return;
             }
-            res.send(yield mysql_1.db.resultModule.save(id, { statusCode: 200, request: req, body: '' }));
+            res.send(201, await mysql_1.db.resultModule.save(id, { statusCode: 200, request: req, body: '' }));
         }
         catch (error) {
-            res.send(400, error);
+            res.send(500, error);
         }
-    }));
+    });
     /**
      * @param id (Number - id of Result)
      *
      * @return delete row from db.results
      */
-    server.del('/result', (req, res) => tslib_1.__awaiter(this, void 0, void 0, function* () {
+    server.del('/result', async (req, res) => {
         const { id } = req.params;
         try {
             const { error } = Joi.validate({ id: id }, result_1.resultSchema);
@@ -137,16 +141,16 @@ exports.routes = (server) => {
                 res.send(400, error);
                 return;
             }
-            res.send(yield mysql_1.db.resultModule.delete(id));
+            res.send(200, await mysql_1.db.resultModule.delete(id));
         }
         catch (error) {
-            res.send(400, error);
+            res.send(500, error);
         }
-    }));
+    });
     /**
      * @return all endpoints for specific user
      */
-    server.get('/endpoint', (req, res) => tslib_1.__awaiter(this, void 0, void 0, function* () {
+    server.get('/endpoint', async (req, res) => {
         try {
             const user = req.decoded;
             const { error } = Joi.validate({ email: user.email, username: user.name }, user_1.userSchema);
@@ -154,13 +158,13 @@ exports.routes = (server) => {
                 res.send(400, error);
                 return;
             }
-            const endpoints = yield mysql_1.db.endpointModule.all(user);
-            res.send({ endpoints });
+            const endpoints = await mysql_1.db.endpointModule.all(user);
+            res.send(200, { endpoints });
         }
         catch (error) {
-            res.send(400, error);
+            res.send(500, error);
         }
-    }));
+    });
     /**
      * @param id (Number)
      * @param name (String)
@@ -169,7 +173,7 @@ exports.routes = (server) => {
      *
      * @return updated row in db.endpoints
      */
-    server.put('/endpoint', (req, res) => tslib_1.__awaiter(this, void 0, void 0, function* () {
+    server.put('/endpoint', async (req, res) => {
         const { id, name, url, interval } = req.params;
         try {
             const { error } = Joi.validate({ id: id, name: name, url: url, interval: interval }, endpoint_1.endpointSchema);
@@ -177,12 +181,12 @@ exports.routes = (server) => {
                 res.send(400, error);
                 return;
             }
-            res.send(yield mysql_1.db.endpointModule.update({ id: id, name: name, url: url, interval: interval }));
+            res.send(200, await mysql_1.db.endpointModule.update({ id, name, url, interval }));
         }
         catch (error) {
-            res.send(400, error);
+            res.send(500, error);
         }
-    }));
+    });
     /**
      * @param name
      * @param url
@@ -190,7 +194,7 @@ exports.routes = (server) => {
      *
      * @return new row in db.endpoints
      */
-    server.post('/endpoint', (req, res) => tslib_1.__awaiter(this, void 0, void 0, function* () {
+    server.post('/endpoint', async (req, res) => {
         const { name, url, interval } = req.params;
         const user = req.decoded;
         try {
@@ -199,18 +203,18 @@ exports.routes = (server) => {
                 res.send(400, error);
                 return;
             }
-            res.send(yield mysql_1.db.endpointModule.save(name, url, interval, user));
+            res.send(201, await mysql_1.db.endpointModule.save(name, url, interval, user));
         }
         catch (error) {
-            res.send(400, error);
+            res.send(500, error);
         }
-    }));
+    });
     /**
      * @param id
      *
      * @return delete all results for specific endpoint and endpoint itself
      */
-    server.del('/endpoint', (req, res) => tslib_1.__awaiter(this, void 0, void 0, function* () {
+    server.del('/endpoint', async (req, res) => {
         const { id } = req.params;
         const user = req.decoded;
         try {
@@ -219,11 +223,11 @@ exports.routes = (server) => {
                 res.send(400, error);
                 return;
             }
-            res.send({ results: yield mysql_1.db.resultModule.deleteByEndpoint(id, user), endpoints: mysql_1.db.endpointModule.delete(id, user) });
+            res.send(200, { results: await mysql_1.db.resultModule.deleteByEndpoint(id, user), endpoints: mysql_1.db.endpointModule.delete(id, user) });
         }
         catch (error) {
-            res.send(400, error);
+            res.send(500, error);
         }
-    }));
+    });
 };
 //# sourceMappingURL=routes.js.map

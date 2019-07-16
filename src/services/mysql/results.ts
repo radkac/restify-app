@@ -1,91 +1,116 @@
-import { Endpoint } from './endpoints';
-import request = require('request');
-import { Connection } from 'mysql';
+import * as request from 'request';
 import { ErrorHandler } from '.';
+import { EndpointModel } from './endpointModel';
+import { Endpoint } from './endpoints';
+import { ResultModel } from './resultModel';
 import { User } from './users';
 
 export type Result = {
-  id: number,
-  username: string,
-  access_token: string,
-  email: string
-}
+  id: number;
+  username: string;
+  access_token: string;
+  email: string;
+};
 
 export interface ResultModule {
-  all(user: User): Promise<Result[]>;
+  all(user: User): Promise<ResultModel[]>;
   save(endpoint: Endpoint, response: object): Promise<number>;
-  delete(id: number): Promise<{ message: string, affectedRows: number }>;
-  deleteByEndpoint(endpointId: number, user: User): Promise<{ endpointId: number, message: string, affectedRows: number }>;
+  delete(id: number): Promise<{ message: string; affectedRows: number }>;
+  deleteByEndpoint(endpointId: number, user: User): Promise<{ endpointId: number; message: string; affectedRows: number }>;
 }
 
-export const results = (deps: { connection: Connection, errorHandler: ErrorHandler}): ResultModule => {
+// tslint:disable-next-line: max-func-body-length
+export const results = (errorHandler: ErrorHandler): ResultModule => {
   return {
     /**
      * Function for get all results
      */
-    all: (user: User): Promise<Result[]> => {
+    all: (user: User): Promise<ResultModel[]> => {
       return new Promise((resolve, reject) => {
-        const { connection, errorHandler } = deps
-        connection.query('SELECT results.* FROM results JOIN endpoints ON results.endpoint_id = endpoints.id WHERE user_id = ? ORDER BY results.last_check DESC limit 10', [user.id], (error, results) => {
-          if (error) {
-            errorHandler(error, 'Nepodařilo se zobrazit seznam výsledků');
-            reject();
-          }
-          // resolve promise
-          return resolve(results);
-        })
-      })
+        ResultModel.findAll({ where: { user_id: user.id }, include: [EndpointModel] })
+          .then(resultsList => {
+            if (resultsList !== null) {
+              return resolve(resultsList);
+            }
+          })
+          .catch(error => {
+            console.log(error);
+            errorHandler(undefined, 'Nepodařilo se zobrazit seznam výsledků');
+            reject(error);
+          });
+      });
     },
     /**
      * Function for save new row to db with params
      */
-    save: (endpoint: Endpoint,  response: request.Response): Promise<number> => {
+    save: (endpoint: Endpoint, response: request.Response): Promise<number> => {
       return new Promise((resolve, reject) => {
-        const { connection, errorHandler } = deps;
         const date = new Date();
         const endpointId = endpoint.id;
-        connection.query('INSERT INTO results(`last_check`, `http_status`, `payload`, `endpoint_id`) ' +
-          'VALUES(?,?,?,?)', [date, response.statusCode, response.body, endpointId], (error, result) => {
-          if (error) {
-            errorHandler(error, `Nepodařilo se uložit výsledek ${endpointId}`);
-            reject();
-          }
-          // resolve promise
-            return resolve(result.insertId);
-        })
-      })
+        ResultModel.create({ lastCheck: date, httpStatus: response.statusCode, payload: response.body, endpointId })
+          .then(resultSaved => ResultModel.findOrCreate({ where: { id: resultSaved.id } }))
+          .then(([result, created]) => {
+            console.log(result.get({
+              plain: true,
+            }));
+            console.log(created);
+            resolve(result.id);
+          })
+          .catch(error => {
+            console.log(error);
+            errorHandler(undefined, `Nepodařilo se uložit výsledek ${endpointId}`);
+            reject(error);
+          });
+      });
     },
     /**
      * Function for delete specific Result
      */
-    delete: (id: number): Promise<{ message: string, affectedRows: number }> => {
+    delete: (resultId: number): Promise<{ message: string; affectedRows: number }> => {
       return new Promise((resolve, reject) => {
-        const { connection, errorHandler } = deps;
-        connection.query('DELETE FROM results WHERE id = ?', [id], (error, results) => {
-          if (error || !results.affectedRows) {
-            errorHandler(error, `Nepodařilo se smazat výsledek s id ${id}`);
-            reject();
-          }
-          // resolve promise
-          return resolve({ message: 'Výsledek úspěšně odstraněn.', affectedRows: results.affectedRows });
-        })
-      })
+        ResultModel.destroy({ where: { id: resultId } })
+          .then(deletedResult => {
+            console.log(deletedResult);
+            const affectedRows = ResultModel.findAll();
+            if (affectedRows !== null) {
+              return resolve({ message: 'Výsledek úspěšně odstraněn.', affectedRows: Object.keys(affectedRows).length });
+            }
+          })
+          .catch(error => {
+            errorHandler(undefined, `Nepodařilo se smazat výsledek s id ${resultId}`);
+            reject(error);
+          });
+      });
     },
     /**
      * Function for delete all Results by given Endpoint ID
      */
-    deleteByEndpoint: (endpointId: number, user: User): Promise<{ endpointId: number, message: string, affectedRows: number }> => {
+    deleteByEndpoint: (endpointId: number): Promise<{ endpointId: number; message: string; affectedRows: number }> => {
       return new Promise((resolve, reject) => {
-        const { connection, errorHandler } = deps;
-        connection.query('DELETE r FROM results r JOIN endpoints e ON r.endpoint_id = e.id WHERE r.endpoint_id = ? AND e.user_id = ?', [endpointId, user.id], (error, results) => {
-          if (error || !results.affectedRows) {
-            errorHandler(error, `Nepodařilo se smazat endpoint s id ${endpointId}`);
-            reject();
-          }
-          // resolve promise
-          return resolve({ endpointId: endpointId, message: `Výsledky pro endpoint s id ${endpointId} úspěšně odstraněny.`, affectedRows: results.affectedRows })
-        })
-      })
-    }
-  }
-}
+        ResultModel.findAll({ attributes: ['endpointId'], where: { endpointId} })
+          .then(results => {
+            if (results.length === 0) {
+              return reject();
+            }
+            else {
+              results.forEach(result => {
+                result.destroy();
+              });
+
+              return resolve({
+                endpointId: endpointId,
+                message: `Výsledky pro endpoint s id ${endpointId} úspěšně odstraněny.`,
+                affectedRows: 1,
+              });
+            }
+          })
+          .catch(error => {
+            console.log(error);
+            errorHandler(undefined, `Nepodařilo se smazat endpoint s id ${endpointId}`);
+
+            return reject(error);
+          });
+      });
+    },
+  };
+};

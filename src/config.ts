@@ -5,4 +5,4 @@ export const MYSQL_DATABASE = 'restify';
 
 export const JWT_SECRET = 'ad2TyCKsr7oNLdwMaeiHd2WBeT1Txf4c';
 
-export const PORT = 3456
+export const PORT = 3456;

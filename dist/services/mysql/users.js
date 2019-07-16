@@ -1,21 +1,26 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const bluebird_1 = require("bluebird");
 const sha1 = require("sha1");
-exports.users = (deps) => {
+const _1 = require(".");
+const userModel_1 = require("./userModel");
+// tslint:disable-next-line: max-func-body-length
+exports.users = (errorHandler) => {
     return {
         /**
          * Function for get all users
          */
         all: () => {
             return new Promise((resolve, reject) => {
-                const { connection, errorHandler } = deps;
-                connection.query('SELECT id, email FROM users', (error, usersAll) => {
-                    if (error) {
-                        errorHandler(error, 'Nepodařilo se zobrazit seznam uživatelů');
-                        reject();
-                        // resolve([]);
+                userModel_1.UserModel.findAll()
+                    .then(usersList => {
+                    if (usersList === null) {
+                        errorHandler(undefined, 'Nepodařilo se zobrazit list of users');
+                        return reject();
                     }
-                    return resolve(usersAll);
+                    else {
+                        return resolve(usersList);
+                    }
                 });
             });
         },
@@ -23,15 +28,21 @@ exports.users = (deps) => {
          * Function for save new row to db with params
          */
         save: (email, username, accessToken) => {
-            return new Promise((resolve, reject) => {
-                const { connection, errorHandler } = deps;
-                connection.query('INSERT INTO users(email, username, access_token) VALUES(?,?,?)', [email, username, sha1(accessToken)], (error, userSaved) => {
-                    if (error) {
-                        errorHandler(error, `Nepodařilo se uložit uživatele ${email}`);
-                        reject();
-                    }
-                    // resolve promise
-                    return resolve({ id: userSaved.insertId, email, username });
+            return new Promise((resolve) => {
+                userModel_1.UserModel
+                    .create({ email, username, accessToken: sha1(accessToken) })
+                    .then(userSaved => userModel_1.UserModel.findOrCreate({ where: { id: userSaved.id } }))
+                    .then(([user, created]) => {
+                    console.log(user.get({
+                        plain: true,
+                    }));
+                    console.log(created);
+                    resolve({ id: user.id, email, username });
+                })
+                    .catch(([error, user]) => {
+                    console.log(error);
+                    errorHandler(undefined, `Nepodařilo se uložit uživatele ${user.id}`);
+                    bluebird_1.reject(error);
                 });
             });
         },
@@ -40,7 +51,6 @@ exports.users = (deps) => {
          */
         update: (user) => {
             return new Promise((resolve, reject) => {
-                const { connection, errorHandler } = deps;
                 const { id } = user;
                 const keys = [];
                 const values = [];
@@ -51,29 +61,40 @@ exports.users = (deps) => {
                         values.push(user[key]);
                     }
                 });
-                connection.query(`UPDATE users SET ${keys.join(', ')} WHERE id = ?`, values.concat(id), (error, userUpdate) => {
-                    if (error || !userUpdate.affectedRows) {
-                        errorHandler(error, `Nepodařilo se změnit uživatele ${id}`);
-                        reject();
+                // `UPDATE users SET ${keys.join(', ')} WHERE id = ?`, values.concat(id),
+                _1.sequelize.query(`UPDATE users SET ${keys.join(', ')} WHERE id = ?`, { replacements: [values.concat(id)] })
+                    .then(updatedUser => {
+                    // console.log(results.get({
+                    //   plain: true,
+                    // }));
+                    console.log(updatedUser);
+                    return resolve({ user: updatedUser, affectedRows: 1 }); // get affected Rows
+                })
+                    .catch(([error, updatedUser]) => {
+                    console.log(error);
+                    if (error || !updatedUser.affectedRows) {
+                        errorHandler(undefined, `Nepodařilo se uložit uživatele ${updatedUser.id}`);
+                        reject(error);
                     }
-                    // resolve promise
-                    return resolve({ user: user, affectedRows: userUpdate.affectedRows });
                 });
             });
         },
         /**
          * Function for delete specific user
          */
-        delete: (id) => {
+        delete: (userId) => {
             return new Promise((resolve, reject) => {
-                const { connection, errorHandler } = deps;
-                connection.query('DELETE FROM users WHERE id = ?', [id], (error, results) => {
-                    if (error || !results.affectedRows) {
-                        errorHandler(error, `Nepodařilo se smazat uživatele s id ${id}`);
-                        reject();
+                userModel_1.UserModel.destroy({ where: { id: userId } })
+                    .then(deletedUser => {
+                    console.log(deletedUser);
+                    const affectedRows = userModel_1.UserModel.findAll();
+                    if (affectedRows === null) {
+                        errorHandler(undefined, `Nepodařilo se smazat uživatele s id ${deletedUser}`);
+                        return reject();
                     }
-                    // resolve promise
-                    return resolve({ message: 'Uživatel úspěšně odstraněn.', affectedRows: results.affectedRows });
+                    else {
+                        return resolve({ message: 'Uživatel úspěšně odstraněn.', affectedRows: Object.keys(affectedRows).length });
+                    }
                 });
             });
         },

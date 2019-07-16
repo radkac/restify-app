@@ -3,26 +3,26 @@ import { results } from '../results';
 import { errorHandler } from './setup';
 
 test('Create endpoint', async () => {
-  const fakeConnection: any = {
-    query: jest.fn()
-      .mockImplementation((callback) => {
-        callback(undefined, { endpoint: { name: 'Testovaci endpoint', url: 'http://www.google.com', interval: 1000, user: { id: '1' } } });
-    }),
-  };
-  const fakeEndpoints = endpoints({ connection: fakeConnection, errorHandler });
+  // const fakeConnection: any = {
+  //   query: jest.fn()
+  //     .mockImplementation((callback) => {
+  //       callback(undefined, { endpoint: { name: 'Testovaci endpoint', url: 'http://www.google.com', interval: 1000, user: { id: '1' } } });
+  //   }),
+  // };
+  const fakeEndpoints = endpoints(errorHandler);
   const insertEndpoint = await fakeEndpoints.save('Testovaci endpoint', 'http://www.google.com', 1000, { id: 1 });
   expect(insertEndpoint.id)
     .toBe('Testovaci endpoint');
 });
 
 test('Update endpoint', async () => {
-  const fakeConnection: any = {
-    query: jest.fn()
-      .mockImplementation((callback) => {
-        callback(undefined, { endpoint: { id: 1, name: 'Zmeneny endpoint' }, affectedRows: 1 });
-    }),
-  };
-  const fakeEndpoints = endpoints({ connection: fakeConnection, errorHandler });
+  // const fakeConnection: any = {
+  //   query: jest.fn()
+  //     .mockImplementation((callback) => {
+  //       callback(undefined, { endpoint: { id: 1, name: 'Zmeneny endpoint' }, affectedRows: 1 });
+  //   }),
+  // };
+  const fakeEndpoints = endpoints(errorHandler);
   const updateEndpoint = await fakeEndpoints.update({ id: 1, name: 'Zmeneny endpoint'});
   expect(updateEndpoint.endpointId)
     .toBe(1);
@@ -31,21 +31,21 @@ test('Update endpoint', async () => {
 });
 
 test('Delete endpoint', async () => {
-  const fakeConnection: any = {
-    query: jest.fn()
-      .mockImplementation((callback) => {
-        callback(undefined, { endpoint: { id: 1, name: 'Zmeneny endpoint' }, affectedRows: 1 });
-    }),
-  };
-  const fakeConnection1: any = {
-    query: jest.fn()
-      .mockImplementation((callback) => {
-      callback(undefined, { endpoint: { id: 1 }, affectedRows: 1 });
-    }),
-  };
+  // const fakeConnection: any = {
+  //   query: jest.fn()
+  //     .mockImplementation((callback) => {
+  //       callback(undefined, { endpoint: { id: 1, name: 'Zmeneny endpoint' }, affectedRows: 1 });
+  //   }),
+  // };
+  // const fakeConnection1: any = {
+  //   query: jest.fn()
+  //     .mockImplementation((callback) => {
+  //     callback(undefined, { endpoint: { id: 1 }, affectedRows: 1 });
+  //   }),
+  // };
 
-  const fakeEndpoints = endpoints({ connection: fakeConnection, errorHandler });
-  const fakeResults = results({ connection: fakeConnection1, errorHandler });
+  const fakeEndpoints = endpoints(errorHandler);
+  const fakeResults = results(errorHandler);
 
   const resultResult = await fakeResults.deleteByEndpoint(1, { id: 1, username: 'Test', email: 'test@test.cz' });
   const endpointResult = await fakeEndpoints.delete(1, { id: 1, username: 'Test', email: 'test@test.cz' });
